@@ -48,11 +48,14 @@ std::vector<std::vector<int>> NoGroup(
   return features_in_group;
 }
 
-int GetConfilctCount(const std::vector<bool>& mark, const int* indices, int num_indices, data_size_t max_cnt) {
+int GetConfilctCount(const std::vector<uint8_t>& mark, const int* indices, int num_indices, data_size_t max_cnt, int max_feature_cnt) {
   int ret = 0;
   for (int i = 0; i < num_indices; ++i) {
     if (mark[indices[i]]) {
       ++ret;
+      if (mark[indices[i]] + 1 > max_feature_cnt) {
+        return -1;
+      }
     }
     if (ret >= max_cnt) {
       return -1;
@@ -61,10 +64,10 @@ int GetConfilctCount(const std::vector<bool>& mark, const int* indices, int num_
   return ret;
 }
 
-void MarkUsed(std::vector<bool>* mark, const int* indices, data_size_t num_indices) {
+void MarkUsed(std::vector<uint8_t>* mark, const int* indices, data_size_t num_indices) {
   auto& ref_mark = *mark;
   for (int i = 0; i < num_indices; ++i) {
-    ref_mark[indices[i]] = true;
+    ref_mark[indices[i]] += 1;
   }
 }
 
@@ -82,9 +85,10 @@ std::vector<std::vector<int>> FindGroups(const std::vector<std::unique_ptr<BinMa
   const data_size_t single_val_max_conflict_cnt = static_cast<data_size_t>(total_sample_cnt / 10000);
   const data_size_t max_samples_per_multi_val_group = static_cast<data_size_t>(total_sample_cnt * 2);
   multi_val_group->clear();
+
   Random rand(num_data);
   std::vector<std::vector<int>> features_in_group;
-  std::vector<std::vector<bool>> conflict_marks;
+  std::vector<std::vector<uint8_t>> conflict_marks;
   std::vector<data_size_t> group_used_row_cnt;
   std::vector<data_size_t> group_total_data_cnt;
   std::vector<int> group_num_bin;
@@ -116,7 +120,7 @@ std::vector<std::vector<int>> FindGroups(const std::vector<std::unique_ptr<BinMa
     int best_conflict_cnt = -1;
     for (auto gid : search_groups) {
       const data_size_t rest_max_cnt = single_val_max_conflict_cnt - group_total_data_cnt[gid] + group_used_row_cnt[gid];
-      const data_size_t cnt = is_filtered_feature ? 0 : GetConfilctCount(conflict_marks[gid], sample_indices[fidx], num_per_col[fidx], rest_max_cnt);
+      const data_size_t cnt = is_filtered_feature ? 0 : GetConfilctCount(conflict_marks[gid], sample_indices[fidx], num_per_col[fidx], rest_max_cnt, 1);
       if (cnt >= 0 && cnt <= rest_max_cnt && cnt <= cur_non_zero_cnt / 2) {
         best_gid = gid;
         best_conflict_cnt = cnt;
@@ -134,7 +138,7 @@ std::vector<std::vector<int>> FindGroups(const std::vector<std::unique_ptr<BinMa
     } else {
       features_in_group.emplace_back();
       features_in_group.back().push_back(fidx);
-      conflict_marks.emplace_back(total_sample_cnt, false);
+      conflict_marks.emplace_back(total_sample_cnt, 0);
       if (!is_filtered_feature) {
         MarkUsed(&(conflict_marks.back()), sample_indices[fidx], num_per_col[fidx]);
       }
@@ -143,16 +147,16 @@ std::vector<std::vector<int>> FindGroups(const std::vector<std::unique_ptr<BinMa
       group_num_bin.push_back(1 + bin_mappers[fidx]->num_bin() + (bin_mappers[fidx]->GetDefaultBin() == 0 ? -1 : 0));
     }
   }
-  multi_val_group->resize(features_in_group.size(), false);
+
   std::vector<int> second_round_features;
   std::vector<std::vector<int>> features_in_group2;
-  std::vector<std::vector<bool>> conflict_marks2;
+  std::vector<std::vector<uint8_t>> conflict_marks2;
   std::vector<data_size_t> group_used_row_cnt2;
   std::vector<data_size_t> group_total_data_cnt2;
   std::vector<int> group_num_bin2;
   std::vector<bool> forced_single_val_group;
 
-  const double dense_threshold = 0.6;
+  const double dense_threshold = 0.4;
   for (int gid = 0; gid < static_cast<int>(features_in_group.size()); ++gid) {
     const double dense_rate = static_cast<double>(group_used_row_cnt[gid]) / total_sample_cnt;
     if (dense_rate >= dense_threshold) {
@@ -168,13 +172,15 @@ std::vector<std::vector<int>> FindGroups(const std::vector<std::unique_ptr<BinMa
       }
     }
   }
+
   features_in_group = features_in_group2;
   conflict_marks = conflict_marks2;
   group_total_data_cnt = group_total_data_cnt2;
   group_used_row_cnt = group_used_row_cnt2;
   group_num_bin = group_num_bin2;
   multi_val_group->resize(features_in_group.size(), false);
-  const int max_feature_per_group = 63;
+  const int max_feature_per_group = 255;
+  const int max_concurrent_feature_per_group = 32;
 
   // second round: fill the multi-val group
   for (auto fidx : second_round_features) {
@@ -207,11 +213,11 @@ std::vector<std::vector<int>> FindGroups(const std::vector<std::unique_ptr<BinMa
     int best_gid = -1;
     int best_conflict_cnt = total_sample_cnt + 1;
     for (auto gid : search_groups) {
-      int rest_max_cnt = std::max(cur_non_zero_cnt / 3, total_sample_cnt / 2);
+      int rest_max_cnt = total_sample_cnt;
       if (forced_single_val_group[gid]) {
         rest_max_cnt = std::min(rest_max_cnt, single_val_max_conflict_cnt - group_total_data_cnt[gid] + group_used_row_cnt[gid]);
       } 
-      const int cnt = is_filtered_feature ? 0 : GetConfilctCount(conflict_marks[gid], sample_indices[fidx], num_per_col[fidx], rest_max_cnt);
+      const int cnt = is_filtered_feature ? 0 : GetConfilctCount(conflict_marks[gid], sample_indices[fidx], num_per_col[fidx], rest_max_cnt, max_concurrent_feature_per_group);
       if (cnt < 0) {
         continue;
       }
@@ -233,11 +239,10 @@ std::vector<std::vector<int>> FindGroups(const std::vector<std::unique_ptr<BinMa
         multi_val_group->at(best_gid) = true;
       }
     } else {
-      const double dense_ratio = static_cast<double>(cur_non_zero_cnt) / total_sample_cnt;
-      forced_single_val_group.push_back(dense_ratio >= 0.4);
+      forced_single_val_group.push_back(false);
       features_in_group.emplace_back();
       features_in_group.back().push_back(fidx);
-      conflict_marks.emplace_back(total_sample_cnt, false);
+      conflict_marks.emplace_back(total_sample_cnt, 0);
       if (!is_filtered_feature) {
         MarkUsed(&(conflict_marks.back()), sample_indices[fidx], num_per_col[fidx]);
       }
@@ -903,8 +908,10 @@ void Dataset::ConstructHistograms(const std::vector<int8_t>& is_feature_used,
     return;
   }
 
-  std::vector<int> used_group;
-  used_group.reserve(num_groups_);
+  std::vector<int> used_dense_group;
+  std::vector<int> used_sparse_group;
+  used_dense_group.reserve(num_groups_);
+  used_sparse_group.reserve(num_groups_);
   for (int group = 0; group < num_groups_; ++group) {
     const int f_cnt = group_feature_cnt_[group];
     bool is_group_used = false;
@@ -916,10 +923,15 @@ void Dataset::ConstructHistograms(const std::vector<int8_t>& is_feature_used,
       }
     }
     if (is_group_used) {
-      used_group.push_back(group);
+      if (feature_groups_[group]->is_multi_val_) {
+        used_sparse_group.push_back(group);
+      } else {
+        used_dense_group.push_back(group);
+      }
     }
   }
-  int num_used_group = static_cast<int>(used_group.size());
+  int num_used_dense_group = static_cast<int>(used_dense_group.size());
+  int num_used_sparse_group = static_cast<int>(used_sparse_group.size());
   auto ptr_ordered_grad = gradients;
   auto ptr_ordered_hess = hessians;
   if (data_indices != nullptr && num_data < num_data_) {
@@ -940,9 +952,28 @@ void Dataset::ConstructHistograms(const std::vector<int8_t>& is_feature_used,
     if (!is_constant_hessian) {
       OMP_INIT_EX();
       #pragma omp parallel for schedule(static)
-      for (int gi = 0; gi < num_used_group; ++gi) {
+      for (int gi = 0; gi < num_used_dense_group; ++gi) {
         OMP_LOOP_EX_BEGIN();
-        int group = used_group[gi];
+        int group = used_dense_group[gi];
+        // feature is not used
+        auto data_ptr = hist_data + group_bin_boundaries_[group];
+        const int num_bin = feature_groups_[group]->num_total_bin_;
+        std::memset(reinterpret_cast<void*>(data_ptr + 1), 0, (num_bin - 1) * sizeof(HistogramBinEntry));
+        // construct histograms for smaller leaf
+        feature_groups_[group]->bin_data_->ConstructHistogram(
+          data_indices,
+          num_data,
+          ptr_ordered_grad,
+          ptr_ordered_hess,
+          data_ptr);
+        OMP_LOOP_EX_END();
+      }
+      OMP_THROW_EX();
+
+      #pragma omp parallel for schedule(dynamic)
+      for (int gi = 0; gi < num_used_sparse_group; ++gi) {
+        OMP_LOOP_EX_BEGIN();
+        int group = used_sparse_group[gi];
         // feature is not used
         auto data_ptr = hist_data + group_bin_boundaries_[group];
         const int num_bin = feature_groups_[group]->num_total_bin_;
@@ -960,9 +991,31 @@ void Dataset::ConstructHistograms(const std::vector<int8_t>& is_feature_used,
     } else {
       OMP_INIT_EX();
       #pragma omp parallel for schedule(static)
-      for (int gi = 0; gi < num_used_group; ++gi) {
+      for (int gi = 0; gi < num_used_dense_group; ++gi) {
         OMP_LOOP_EX_BEGIN();
-        int group = used_group[gi];
+        int group = used_dense_group[gi];
+        // feature is not used
+        auto data_ptr = hist_data + group_bin_boundaries_[group];
+        const int num_bin = feature_groups_[group]->num_total_bin_;
+        std::memset(reinterpret_cast<void*>(data_ptr + 1), 0, (num_bin - 1) * sizeof(HistogramBinEntry));
+        // construct histograms for smaller leaf
+        feature_groups_[group]->bin_data_->ConstructHistogram(
+          data_indices,
+          num_data,
+          ptr_ordered_grad,
+          data_ptr);
+        // fixed hessian.
+        for (int i = 0; i < num_bin; ++i) {
+          data_ptr[i].sum_hessians = data_ptr[i].cnt * hessians[0];
+        }
+        OMP_LOOP_EX_END();
+      }
+      OMP_THROW_EX();
+
+      #pragma omp parallel for schedule(dynamic)
+      for (int gi = 0; gi < num_used_sparse_group; ++gi) {
+        OMP_LOOP_EX_BEGIN();
+        int group = used_sparse_group[gi];
         // feature is not used
         auto data_ptr = hist_data + group_bin_boundaries_[group];
         const int num_bin = feature_groups_[group]->num_total_bin_;
@@ -985,9 +1038,27 @@ void Dataset::ConstructHistograms(const std::vector<int8_t>& is_feature_used,
     if (!is_constant_hessian) {
       OMP_INIT_EX();
       #pragma omp parallel for schedule(static)
-      for (int gi = 0; gi < num_used_group; ++gi) {
+      for (int gi = 0; gi < num_used_dense_group; ++gi) {
         OMP_LOOP_EX_BEGIN();
-        int group = used_group[gi];
+        int group = used_dense_group[gi];
+        // feature is not used
+        auto data_ptr = hist_data + group_bin_boundaries_[group];
+        const int num_bin = feature_groups_[group]->num_total_bin_;
+        std::memset(reinterpret_cast<void*>(data_ptr + 1), 0, (num_bin - 1) * sizeof(HistogramBinEntry));
+        // construct histograms for smaller leaf
+        feature_groups_[group]->bin_data_->ConstructHistogram(
+          num_data,
+          ptr_ordered_grad,
+          ptr_ordered_hess,
+          data_ptr);
+        OMP_LOOP_EX_END();
+      }
+      OMP_THROW_EX();
+
+      #pragma omp parallel for schedule(dynamic)
+      for (int gi = 0; gi < num_used_sparse_group; ++gi) {
+        OMP_LOOP_EX_BEGIN();
+        int group = used_sparse_group[gi];
         // feature is not used
         auto data_ptr = hist_data + group_bin_boundaries_[group];
         const int num_bin = feature_groups_[group]->num_total_bin_;
@@ -1004,9 +1075,30 @@ void Dataset::ConstructHistograms(const std::vector<int8_t>& is_feature_used,
     } else {
       OMP_INIT_EX();
       #pragma omp parallel for schedule(static)
-      for (int gi = 0; gi < num_used_group; ++gi) {
+      for (int gi = 0; gi < num_used_dense_group; ++gi) {
         OMP_LOOP_EX_BEGIN();
-        int group = used_group[gi];
+        int group = used_dense_group[gi];
+        // feature is not used
+        auto data_ptr = hist_data + group_bin_boundaries_[group];
+        const int num_bin = feature_groups_[group]->num_total_bin_;
+        std::memset(reinterpret_cast<void*>(data_ptr + 1), 0, (num_bin - 1) * sizeof(HistogramBinEntry));
+        // construct histograms for smaller leaf
+        feature_groups_[group]->bin_data_->ConstructHistogram(
+          num_data,
+          ptr_ordered_grad,
+          data_ptr);
+        // fixed hessian.
+        for (int i = 0; i < num_bin; ++i) {
+          data_ptr[i].sum_hessians = data_ptr[i].cnt * hessians[0];
+        }
+        OMP_LOOP_EX_END();
+      }
+      OMP_THROW_EX();
+
+      #pragma omp parallel for schedule(dynamic)
+      for (int gi = 0; gi < num_used_sparse_group; ++gi) {
+        OMP_LOOP_EX_BEGIN();
+        int group = used_sparse_group[gi];
         // feature is not used
         auto data_ptr = hist_data + group_bin_boundaries_[group];
         const int num_bin = feature_groups_[group]->num_total_bin_;
