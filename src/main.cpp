@@ -14,17 +14,17 @@ int main(int argc, char** argv) {
     LightGBM::Application app(argc, argv);
     app.Run();
 
-#ifdef USE_MPI
+    #ifdef USE_MPI
     LightGBM::Linkers::MpiFinalizeIfIsParallel();
-#endif
+    #endif
 
     success = true;
   }
-  catch (const std::exception& ex) {
+  catch (const std::exception & ex) {
     std::cerr << "Met Exceptions:" << std::endl;
     std::cerr << ex.what() << std::endl;
   }
-  catch (const std::string& ex) {
+  catch (const std::string & ex) {
     std::cerr << "Met Exceptions:" << std::endl;
     std::cerr << ex << std::endl;
   }
@@ -33,9 +33,9 @@ int main(int argc, char** argv) {
   }
 
   if (!success) {
-#ifdef USE_MPI
+    #ifdef USE_MPI
     LightGBM::Linkers::MpiAbortIfIsParallel();
-#endif
+    #endif
 
     exit(-1);
   }

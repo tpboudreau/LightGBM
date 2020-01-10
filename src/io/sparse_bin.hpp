@@ -42,7 +42,6 @@ class SparseBinIterator: public BinIterator {
     Reset(start_idx);
   }
 
-  inline uint32_t RawGet(data_size_t idx) override;
   inline VAL_T InnerRawGet(data_size_t idx);
 
   inline uint32_t Get(data_size_t idx) override {
@@ -53,6 +52,8 @@ class SparseBinIterator: public BinIterator {
       return default_bin_;
     }
   }
+
+  inline VAL_T NextNonZero(data_size_t idx);
 
   inline void Reset(data_size_t idx) override;
 
@@ -66,14 +67,11 @@ class SparseBinIterator: public BinIterator {
   uint8_t offset_;
 };
 
-template <typename VAL_T>
-class OrderedSparseBin;
 
 template <typename VAL_T>
 class SparseBin: public Bin {
  public:
   friend class SparseBinIterator<VAL_T>;
-  friend class OrderedSparseBin<VAL_T>;
 
   explicit SparseBin(data_size_t num_data)
     : num_data_(num_data) {
@@ -104,30 +102,26 @@ class SparseBin: public Bin {
 
   void ConstructHistogram(const data_size_t*, data_size_t, const score_t*,
     const score_t*, HistogramBinEntry*) const override {
-    // Will use OrderedSparseBin->ConstructHistogram() instead
-    Log::Fatal("Using OrderedSparseBin->ConstructHistogram() instead");
+    Log::Fatal("Not Implemented.");
   }
 
   void ConstructHistogram(data_size_t, const score_t*,
                           const score_t*, HistogramBinEntry*) const override {
-    // Will use OrderedSparseBin->ConstructHistogram() instead
-    Log::Fatal("Using OrderedSparseBin->ConstructHistogram() instead");
+    Log::Fatal("Not Implemented.");
   }
 
   void ConstructHistogram(const data_size_t*, data_size_t, const score_t*,
                           HistogramBinEntry*) const override {
-    // Will use OrderedSparseBin->ConstructHistogram() instead
-    Log::Fatal("Using OrderedSparseBin->ConstructHistogram() instead");
+    Log::Fatal("Not Implemented.");
   }
 
   void ConstructHistogram(data_size_t, const score_t*,
                           HistogramBinEntry*) const override {
-    // Will use OrderedSparseBin->ConstructHistogram() instead
-    Log::Fatal("Using OrderedSparseBin->ConstructHistogram() instead");
+    Log::Fatal("Not Implemented.");
   }
 
-  inline bool NextNonzero(data_size_t* i_delta,
-                          data_size_t* cur_pos) const {
+  inline void NextNonzeroFast(data_size_t* i_delta,
+    data_size_t* cur_pos) const {
     ++(*i_delta);
     data_size_t shift = 0;
     data_size_t delta = deltas_[*i_delta];
@@ -137,10 +131,17 @@ class SparseBin: public Bin {
       delta |= static_cast<data_size_t>(deltas_[*i_delta]) << shift;
     }
     *cur_pos += delta;
+    if (*i_delta >= num_vals_) {
+      *cur_pos = num_data_;
+    } 
+  }
+
+  inline bool NextNonzero(data_size_t* i_delta,
+                          data_size_t* cur_pos) const {
+    NextNonzeroFast(i_delta, cur_pos);
     if (*i_delta < num_vals_) {
       return true;
     } else {
-      *cur_pos = num_data_;
       return false;
     }
   }
@@ -238,8 +239,6 @@ class SparseBin: public Bin {
 
   data_size_t num_data() const override { return num_data_; }
 
-  OrderedBin* CreateOrderedBin() const override;
-
   void FinishLoad() override {
     // get total non zero size
     size_t pair_cnt = 0;
@@ -272,7 +271,6 @@ class SparseBin: public Bin {
       const data_size_t cur_idx = idx_val_pairs[i].first;
       const VAL_T bin = idx_val_pairs[i].second;
       data_size_t cur_delta = cur_idx - last_idx;
-      if (i > 0 && cur_delta == 0) { continue; }
       while (cur_delta >= 256) {
         deltas_.push_back(cur_delta & 0xff);
         vals_.push_back(0);
@@ -386,8 +384,8 @@ class SparseBin: public Bin {
     // transform to delta array
     data_size_t last_idx = 0;
     for (data_size_t i = 0; i < num_used_indices; ++i) {
-      VAL_T bin = iterator.InnerRawGet(used_indices[i]);
-      if (bin > 0) {
+      auto bin = iterator.InnerRawGet(used_indices[i]);
+      while(bin > 0) {
         data_size_t cur_delta = i - last_idx;
         while (cur_delta >= 256) {
           deltas_.push_back(cur_delta & 0xff);
@@ -397,6 +395,7 @@ class SparseBin: public Bin {
         deltas_.push_back(static_cast<uint8_t>(cur_delta));
         vals_.push_back(bin);
         last_idx = i;
+        bin = iterator.NextNonZero(used_indices[i]);
       }
     }
     // avoid out of range
@@ -413,11 +412,13 @@ class SparseBin: public Bin {
 
   SparseBin<VAL_T>* Clone() override;
 
- protected:
   SparseBin<VAL_T>(const SparseBin<VAL_T>& other)
     : num_data_(other.num_data_), deltas_(other.deltas_), vals_(other.vals_),
-      num_vals_(other.num_vals_), push_buffers_(other.push_buffers_),
-      fast_index_(other.fast_index_), fast_index_shift_(other.fast_index_shift_) {}
+    num_vals_(other.num_vals_), push_buffers_(other.push_buffers_),
+    fast_index_(other.fast_index_), fast_index_shift_(other.fast_index_shift_) {
+  }
+
+ private:
 
   data_size_t num_data_;
   std::vector<uint8_t> deltas_;
@@ -434,15 +435,20 @@ SparseBin<VAL_T>* SparseBin<VAL_T>::Clone() {
 }
 
 template <typename VAL_T>
-inline uint32_t SparseBinIterator<VAL_T>::RawGet(data_size_t idx) {
-  return InnerRawGet(idx);
+inline VAL_T SparseBinIterator<VAL_T>::InnerRawGet(data_size_t idx) {
+  while (cur_pos_ < idx) {
+    bin_data_->NextNonzeroFast(&i_delta_, &cur_pos_);
+  }
+  if (cur_pos_ == idx) {
+    return bin_data_->vals_[i_delta_];
+  } else {
+    return 0;
+  }
 }
 
 template <typename VAL_T>
-inline VAL_T SparseBinIterator<VAL_T>::InnerRawGet(data_size_t idx) {
-  while (cur_pos_ < idx) {
-    bin_data_->NextNonzero(&i_delta_, &cur_pos_);
-  }
+inline VAL_T SparseBinIterator<VAL_T>::NextNonZero(data_size_t idx) {
+  bin_data_->NextNonzeroFast(&i_delta_, &cur_pos_);
   if (cur_pos_ == idx) {
     return bin_data_->vals_[i_delta_];
   } else {
