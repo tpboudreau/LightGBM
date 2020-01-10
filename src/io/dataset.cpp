@@ -80,7 +80,7 @@ std::vector<std::vector<int>> FindGroups(const std::vector<std::unique_ptr<BinMa
   const int max_search_group = 100;
   const int max_bin_per_group = 256;
   const data_size_t single_val_max_conflict_cnt = static_cast<data_size_t>(total_sample_cnt / 10000);
-  const data_size_t max_samples_per_multi_val_group = static_cast<data_size_t>(total_sample_cnt * 5);
+  const data_size_t max_samples_per_multi_val_group = static_cast<data_size_t>(total_sample_cnt * 2);
   multi_val_group->clear();
   Random rand(num_data);
   std::vector<std::vector<int>> features_in_group;
@@ -174,7 +174,7 @@ std::vector<std::vector<int>> FindGroups(const std::vector<std::unique_ptr<BinMa
   group_used_row_cnt = group_used_row_cnt2;
   group_num_bin = group_num_bin2;
   multi_val_group->resize(features_in_group.size(), false);
-  const int max_feature_per_group = 255;
+  const int max_feature_per_group = 63;
 
   // second round: fill the multi-val group
   for (auto fidx : second_round_features) {
@@ -205,9 +205,9 @@ std::vector<std::vector<int>> FindGroups(const std::vector<std::unique_ptr<BinMa
       }
     }
     int best_gid = -1;
-    int best_conflict_cnt = static_cast<int>(total_sample_cnt + 1);
+    int best_conflict_cnt = total_sample_cnt + 1;
     for (auto gid : search_groups) {
-      int rest_max_cnt = std::max(total_sample_cnt / 5, cur_non_zero_cnt / 2);
+      int rest_max_cnt = std::max(cur_non_zero_cnt / 3, total_sample_cnt / 2);
       if (forced_single_val_group[gid]) {
         rest_max_cnt = std::min(rest_max_cnt, single_val_max_conflict_cnt - group_total_data_cnt[gid] + group_used_row_cnt[gid]);
       } 
@@ -215,7 +215,7 @@ std::vector<std::vector<int>> FindGroups(const std::vector<std::unique_ptr<BinMa
       if (cnt < 0) {
         continue;
       }
-      if (cnt < best_conflict_cnt || (cnt == best_conflict_cnt && forced_single_val_group[gid])) {
+      if (cnt < best_conflict_cnt || (cnt == best_conflict_cnt && (forced_single_val_group[gid] || group_total_data_cnt[best_gid] > group_total_data_cnt[gid]))) {
         best_conflict_cnt = cnt;
         best_gid = gid;
       }
@@ -234,7 +234,7 @@ std::vector<std::vector<int>> FindGroups(const std::vector<std::unique_ptr<BinMa
       }
     } else {
       const double dense_ratio = static_cast<double>(cur_non_zero_cnt) / total_sample_cnt;
-      forced_single_val_group.push_back(dense_ratio >= 0.3);
+      forced_single_val_group.push_back(dense_ratio >= 0.4);
       features_in_group.emplace_back();
       features_in_group.back().push_back(fidx);
       conflict_marks.emplace_back(total_sample_cnt, false);

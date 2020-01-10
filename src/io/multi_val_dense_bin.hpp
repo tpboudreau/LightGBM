@@ -63,6 +63,7 @@ public:
   void ReSize(data_size_t num_data) override {
     if (num_data_ != num_data) {
       num_data_ = num_data;
+      row_ptr_offset_.resize((num_data_ + 1) >> shift_);
       row_ptr_.resize(num_data_ + 1);
     }
   }
@@ -73,7 +74,7 @@ public:
     const score_t* ordered_gradients, const score_t* ordered_hessians,
     HistogramBinEntry* out) const override {
     for (data_size_t i = 0; i < num_data; ++i) {
-      for (data_size_t idx = row_ptr_[data_indices[i]]; idx < row_ptr_[data_indices[i] + 1]; ++idx) {
+      for (data_size_t idx = RowPtr(data_indices[i]); idx < RowPtr(data_indices[i] + 1); ++idx) {
         const VAL_T bin = data_[idx];
         out[bin].sum_gradients += ordered_gradients[i];
         out[bin].sum_hessians += ordered_hessians[i];
@@ -86,7 +87,7 @@ public:
     const score_t* ordered_gradients, const score_t* ordered_hessians,
     HistogramBinEntry* out) const override {
     for (data_size_t i = 0; i < num_data; ++i) {
-      for (data_size_t idx = row_ptr_[i]; idx < row_ptr_[i + 1]; ++idx) {
+      for (data_size_t idx = RowPtr(i); idx < RowPtr(i + 1); ++idx) {
         const VAL_T bin = data_[idx];
         out[bin].sum_gradients += ordered_gradients[i];
         out[bin].sum_hessians += ordered_hessians[i];
@@ -99,7 +100,7 @@ public:
     const score_t* ordered_gradients,
     HistogramBinEntry* out) const override {
     for (data_size_t i = 0; i < num_data; ++i) {
-      for (data_size_t idx = row_ptr_[data_indices[i]]; idx < row_ptr_[data_indices[i] + 1]; ++idx) {
+      for (data_size_t idx = RowPtr(data_indices[i]); idx < RowPtr(data_indices[i] + 1); ++idx) {
         const VAL_T bin = data_[idx];
         out[bin].sum_gradients += ordered_gradients[i];
         ++out[bin].cnt;
@@ -111,7 +112,7 @@ public:
     const score_t* ordered_gradients,
     HistogramBinEntry* out) const override {
     for (data_size_t i = 0; i < num_data; ++i) {
-      for (data_size_t idx = row_ptr_[i]; idx < row_ptr_[i + 1]; ++idx) {
+      for (data_size_t idx = RowPtr(i); idx < RowPtr(i + 1); ++idx) {
         const VAL_T bin = data_[idx];
         out[bin].sum_gradients += ordered_gradients[i];
         ++out[bin].cnt;
@@ -150,7 +151,7 @@ public:
       for (data_size_t i = 0; i < num_data; ++i) {
         VAL_T bin = t_default_bin;
         const auto idx = data_indices[i];
-        for (data_size_t j = row_ptr_[idx]; j < row_ptr_[idx + 1]; ++j) {
+        for (data_size_t j = RowPtr(idx); j < RowPtr(idx + 1); ++j) {
           if (data_[j] >= minb && data_[j] <= maxb) {
             bin = data_[j];
             break;
@@ -174,7 +175,7 @@ public:
       for (data_size_t i = 0; i < num_data; ++i) {
         VAL_T bin = t_default_bin;
         const auto idx = data_indices[i];
-        for (data_size_t j = row_ptr_[idx]; j < row_ptr_[idx + 1]; ++j) {
+        for (data_size_t j = RowPtr(idx); j < RowPtr(idx + 1); ++j) {
           if (data_[j] >= minb && data_[j] <= maxb) {
             bin = data_[j];
             break;
@@ -208,7 +209,7 @@ public:
     for (data_size_t i = 0; i < num_data; ++i) {
       const data_size_t idx = data_indices[i];
       uint32_t bin = default_bin;
-      for (data_size_t j = row_ptr_[idx]; j < row_ptr_[idx + 1]; ++j) {
+      for (data_size_t j = RowPtr(idx); j < RowPtr(idx + 1); ++j) {
         if (data_[j] >= min_bin && data_[j] <= max_bin) {
           bin = data_[j];
           break;
@@ -229,14 +230,34 @@ public:
 
   void FinishLoad() override {
     data_.clear();
+    
+    int max_cnt_feat = 0;
+    for (data_size_t i = 0; i < num_data_; ++i) {
+      max_cnt_feat = std::max(max_cnt_feat, static_cast<int>(push_buf_[i].size()));
+    }
+    shift_ = 0;
+    while (max_cnt_feat <= 128) {
+      shift_ += 1;
+      max_cnt_feat *= 2;
+    }
+    if (shift_ == 0 || shift_ == 8) {
+      Log::Fatal("");
+    }
+    row_ptr_offset_.resize(((num_data_ + 1) >> shift_ ) + 1, 0);
     row_ptr_.resize(num_data_ + 1, 0);
+    data_size_t cur_pos = 0;
     for (data_size_t i = 0; i < num_data_; ++i) {
       data_size_t cnt_feat = static_cast<data_size_t>(push_buf_[i].size());
       for (data_size_t j = 0; j < cnt_feat; ++j) {
         data_.push_back(push_buf_[i][j]);
       }
       push_buf_[i].clear();
-      row_ptr_[i + 1] = row_ptr_[i] + cnt_feat;
+      cur_pos += cnt_feat;
+      auto offset_i = (i + 1) >> shift_;
+      if ((offset_i << shift_) == (i + 1)) {
+        row_ptr_offset_[offset_i] = cur_pos;
+      }
+      row_ptr_[i + 1] = static_cast<uint8_t>(cur_pos - row_ptr_offset_[offset_i]);
     }
     push_buf_.clear();
     push_buf_.shrink_to_fit();
@@ -291,6 +312,10 @@ public:
     writer->Write(data_.data(), sizeof(VAL_T) * data_.size());
   }
 
+  inline data_size_t RowPtr(data_size_t idx) const {
+    return row_ptr_offset_[idx >> shift_] + row_ptr_[idx];
+  }
+
   size_t SizesInByte() const override {
     return sizeof(data_size_t) * (num_data_ + 2) + sizeof(VAL_T) * data_.size();
   }
@@ -300,7 +325,9 @@ public:
 private:
   data_size_t num_data_;
   std::vector<VAL_T> data_;
-  std::vector<data_size_t> row_ptr_;
+  std::vector<data_size_t> row_ptr_offset_;
+  std::vector<uint8_t> row_ptr_;
+  uint8_t shift_;
   std::vector<std::vector<VAL_T>> push_buf_;
 
   MultiValDenseBin<VAL_T>(const MultiValDenseBin<VAL_T>& other)
@@ -315,10 +342,9 @@ MultiValDenseBin<VAL_T>* MultiValDenseBin<VAL_T>::Clone() {
 
 template <typename VAL_T>
 uint32_t MultiValDenseBinIterator<VAL_T>::Get(data_size_t idx) {
-  auto ret = bin_data_->data_[idx];
-  for (data_size_t i = bin_data_->row_ptr_[idx]; i < bin_data_->row_ptr_[idx + 1]; ++i) {
+  for (data_size_t i = bin_data_->RowPtr(idx); i < bin_data_->RowPtr(idx + 1); ++i) {
     if (bin_data_->data_[i] >= min_bin_ && bin_data_->data_[i] <= max_bin_) {
-      return ret - min_bin_ + offset_;
+      return bin_data_->data_[i] - min_bin_ + offset_;
     }
   }
   return default_bin_;
