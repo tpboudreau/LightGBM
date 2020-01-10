@@ -100,22 +100,22 @@ class SparseBin: public Bin {
 
   BinIterator* GetIterator(uint32_t min_bin, uint32_t max_bin, uint32_t default_bin) const override;
 
-  void ConstructHistogram(const data_size_t*, data_size_t, const score_t*,
+  void ConstructHistogram(const data_size_t*, data_size_t, data_size_t, const score_t*,
     const score_t*, HistogramBinEntry*) const override {
     Log::Fatal("Not Implemented.");
   }
 
-  void ConstructHistogram(data_size_t, const score_t*,
+  void ConstructHistogram(data_size_t, data_size_t, const score_t*,
                           const score_t*, HistogramBinEntry*) const override {
     Log::Fatal("Not Implemented.");
   }
 
-  void ConstructHistogram(const data_size_t*, data_size_t, const score_t*,
+  void ConstructHistogram(const data_size_t*, data_size_t, data_size_t, const score_t*,
                           HistogramBinEntry*) const override {
     Log::Fatal("Not Implemented.");
   }
 
-  void ConstructHistogram(data_size_t, const score_t*,
+  void ConstructHistogram(data_size_t, data_size_t, const score_t*,
                           HistogramBinEntry*) const override {
     Log::Fatal("Not Implemented.");
   }

@@ -348,11 +348,11 @@ class Bin {
   * \param out Output Result
   */
   virtual void ConstructHistogram(
-    const data_size_t* data_indices, data_size_t num_data,
+    const data_size_t* data_indices, data_size_t start, data_size_t end,
     const score_t* ordered_gradients, const score_t* ordered_hessians,
     HistogramBinEntry* out) const = 0;
 
-  virtual void ConstructHistogram(data_size_t num_data,
+  virtual void ConstructHistogram(data_size_t start, data_size_t end,
     const score_t* ordered_gradients, const score_t* ordered_hessians,
     HistogramBinEntry* out) const = 0;
 
@@ -368,10 +368,10 @@ class Bin {
   * \param ordered_gradients Pointer to gradients, the data_indices[i]-th data's gradient is ordered_gradients[i]
   * \param out Output Result
   */
-  virtual void ConstructHistogram(const data_size_t* data_indices, data_size_t num_data,
+  virtual void ConstructHistogram(const data_size_t* data_indices, data_size_t start, data_size_t end,
                                   const score_t* ordered_gradients, HistogramBinEntry* out) const = 0;
 
-  virtual void ConstructHistogram(data_size_t num_data,
+  virtual void ConstructHistogram(data_size_t start, data_size_t end,
                                   const score_t* ordered_gradients, HistogramBinEntry* out) const = 0;
 
   /*!

@@ -72,14 +72,14 @@ public:
 
   inline BinIterator* GetIterator(uint32_t min_bin, uint32_t max_bin, uint32_t default_bin) const override;
 
-  void ConstructHistogram(const data_size_t* data_indices, data_size_t num_data,
+  void ConstructHistogram(const data_size_t* data_indices, data_size_t start, data_size_t end,
     const score_t* ordered_gradients, const score_t* ordered_hessians,
     HistogramBinEntry* out) const override {
     const data_size_t prefetch_size = 8;
-    const data_size_t rest = num_data & 0x3;
-    data_size_t i = 0;
-    for (; i < num_data - rest; i += 4) {
-      if (i + prefetch_size < num_data) {
+    const data_size_t rest = (end - start) & 0x3;
+    data_size_t i = start;
+    for (; i < end - rest; i += 4) {
+      if (i + prefetch_size < end) {
         PREFETCH_T0(data_.data() + (data_indices[i + prefetch_size] >> 1));
         PREFETCH_T0(ordered_gradients + i + prefetch_size);
         PREFETCH_T0(ordered_hessians + i + prefetch_size);
@@ -112,7 +112,7 @@ public:
       ++out[bin3].cnt;
     }
 
-    for (; i < num_data; ++i) {
+    for (; i < end; ++i) {
       const data_size_t idx = data_indices[i];
       const auto bin = (data_[idx >> 1] >> ((idx & 1) << 2)) & 0xf;
       out[bin].sum_gradients += ordered_gradients[i];
@@ -121,14 +121,14 @@ public:
     }
   }
 
-  void ConstructHistogram(data_size_t num_data,
+  void ConstructHistogram(data_size_t start, data_size_t end,
     const score_t* ordered_gradients, const score_t* ordered_hessians,
     HistogramBinEntry* out) const override {
     const data_size_t prefetch_size = 8;
-    const data_size_t rest = num_data & 0x3;
-    data_size_t i = 0;
-    for (; i < num_data - rest; i += 4) {
-      if (i + prefetch_size < num_data) {
+    const data_size_t rest = (end - start) & 0x3;
+    data_size_t i = start;
+    for (; i < end - rest; i += 4) {
+      if (i + prefetch_size < end) {
         PREFETCH_T0(data_.data() + ((i + prefetch_size) >> 1));
         PREFETCH_T0(ordered_gradients + i + prefetch_size);
         PREFETCH_T0(ordered_hessians + i + prefetch_size);
@@ -153,7 +153,7 @@ public:
       ++out[bin2].cnt;
       ++out[bin3].cnt;
     }
-    for (; i < num_data; ++i) {
+    for (; i < end; ++i) {
       const auto bin = (data_[i >> 1] >> ((i & 1) << 2)) & 0xf;
       out[bin].sum_gradients += ordered_gradients[i];
       out[bin].sum_hessians += ordered_hessians[i];
@@ -161,14 +161,14 @@ public:
     }
   }
 
-  void ConstructHistogram(const data_size_t* data_indices, data_size_t num_data,
+  void ConstructHistogram(const data_size_t* data_indices, data_size_t start, data_size_t end,
     const score_t* ordered_gradients,
     HistogramBinEntry* out) const override {
     const data_size_t prefetch_size = 8;
-    const data_size_t rest = num_data & 0x3;
-    data_size_t i = 0;
-    for (; i < num_data - rest; i += 4) {
-      if (i + prefetch_size < num_data) {
+    const data_size_t rest = (end - start) & 0x3;
+    data_size_t i = start;
+    for (; i < end - rest; i += 4) {
+      if (i + prefetch_size < end) {
         PREFETCH_T0(data_.data() + (data_indices[i + prefetch_size] >> 1));
         PREFETCH_T0(ordered_gradients + i + prefetch_size);
       }
@@ -195,7 +195,7 @@ public:
       ++out[bin3].cnt;
     }
 
-    for (; i < num_data; ++i) {
+    for (; i < end; ++i) {
       const data_size_t idx = data_indices[i];
       const auto bin = (data_[idx >> 1] >> ((idx & 1) << 2)) & 0xf;
       out[bin].sum_gradients += ordered_gradients[i];
@@ -203,14 +203,14 @@ public:
     }
   }
 
-  void ConstructHistogram(data_size_t num_data,
+  void ConstructHistogram(data_size_t start, data_size_t end,
     const score_t* ordered_gradients,
     HistogramBinEntry* out) const override {
     const data_size_t prefetch_size = 8;
-    const data_size_t rest = num_data & 0x3;
-    data_size_t i = 0;
-    for (; i < num_data - rest; i += 4) {
-      if (i + prefetch_size < num_data) {
+    const data_size_t rest = (end - start) & 0x3;
+    data_size_t i = start;
+    for (; i < end - rest; i += 4) {
+      if (i + prefetch_size < end) {
         PREFETCH_T0(data_.data() + ((i + prefetch_size) >> 1));
         PREFETCH_T0(ordered_gradients + i + prefetch_size);
       }
@@ -229,7 +229,7 @@ public:
       ++out[bin2].cnt;
       ++out[bin3].cnt;
     }
-    for (; i < num_data; ++i) {
+    for (; i < end; ++i) {
       const auto bin = (data_[i >> 1] >> ((i & 1) << 2)) & 0xf;
       out[bin].sum_gradients += ordered_gradients[i];
       ++out[bin].cnt;

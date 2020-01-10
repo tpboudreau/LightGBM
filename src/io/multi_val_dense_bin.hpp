@@ -70,12 +70,12 @@ public:
 
   BinIterator* GetIterator(uint32_t min_bin, uint32_t max_bin, uint32_t default_bin) const override;
 
-  void ConstructHistogram(const data_size_t* data_indices, data_size_t num_data,
+  void ConstructHistogram(const data_size_t* data_indices, data_size_t start, data_size_t end,
     const score_t* ordered_gradients, const score_t* ordered_hessians,
     HistogramBinEntry* out) const override {
     const data_size_t prefetch_size = 16;
-    for (data_size_t i = 0; i < num_data; ++i) {
-      if (prefetch_size + i < num_data) {
+    for (data_size_t i = start; i < end; ++i) {
+      if (prefetch_size + i < end) {
         PREFETCH_T0(row_ptr_offset_.data() + ((data_indices[i + prefetch_size]) >> shift_));
         PREFETCH_T0(row_ptr_.data() + data_indices[i + prefetch_size]);
         PREFETCH_T0(data_.data() + row_ptr_offset_[data_indices[i + prefetch_size] >> shift_] + row_ptr_[data_indices[i + prefetch_size]]);
@@ -91,12 +91,12 @@ public:
     }
   }
 
-  void ConstructHistogram(data_size_t num_data,
+  void ConstructHistogram(data_size_t start, data_size_t end,
     const score_t* ordered_gradients, const score_t* ordered_hessians,
     HistogramBinEntry* out) const override {
     const data_size_t prefetch_size = 16;
-    for (data_size_t i = 0; i < num_data; ++i) {
-      if (prefetch_size + i < num_data) {
+    for (data_size_t i = start; i < end; ++i) {
+      if (prefetch_size + i < end) {
         PREFETCH_T0(row_ptr_offset_.data() + ((i + prefetch_size) >> shift_));
         PREFETCH_T0(row_ptr_.data() + i + prefetch_size);
         PREFETCH_T0(data_.data() + row_ptr_offset_[(i + prefetch_size) >> shift_] + row_ptr_[i + prefetch_size]);
@@ -112,12 +112,12 @@ public:
     }
   }
 
-  void ConstructHistogram(const data_size_t* data_indices, data_size_t num_data,
+  void ConstructHistogram(const data_size_t* data_indices, data_size_t start, data_size_t end,
     const score_t* ordered_gradients,
     HistogramBinEntry* out) const override {
     const data_size_t prefetch_size = 16;
-    for (data_size_t i = 0; i < num_data; ++i) {
-      if (prefetch_size + i < num_data) {
+    for (data_size_t i = start; i < end; ++i) {
+      if (prefetch_size + i < end) {
         PREFETCH_T0(row_ptr_offset_.data() + ((data_indices[i + prefetch_size]) >> shift_));
         PREFETCH_T0(row_ptr_.data() + data_indices[i + prefetch_size]);
         PREFETCH_T0(data_.data() + row_ptr_offset_[data_indices[i + prefetch_size] >> shift_] + row_ptr_[data_indices[i + prefetch_size]]);
@@ -131,12 +131,12 @@ public:
     }
   }
 
-  void ConstructHistogram(data_size_t num_data,
+  void ConstructHistogram(data_size_t start, data_size_t end,
     const score_t* ordered_gradients,
     HistogramBinEntry* out) const override {
     const data_size_t prefetch_size = 16;
-    for (data_size_t i = 0; i < num_data; ++i) {
-      if (prefetch_size + i < num_data) {
+    for (data_size_t i = start; i < end; ++i) {
+      if (prefetch_size + i < end) {
         PREFETCH_T0(row_ptr_offset_.data() + ((i + prefetch_size) >> shift_));
         PREFETCH_T0(row_ptr_.data() + i + prefetch_size);
         PREFETCH_T0(data_.data() + row_ptr_offset_[(i + prefetch_size) >> shift_] + row_ptr_[i + prefetch_size]);
