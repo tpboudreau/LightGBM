@@ -1055,13 +1055,13 @@ void Dataset::ConstructHistograms(const std::vector<int8_t>& is_feature_used,
     for (int gi = 0; gi < num_used_sparse_group; ++gi) {
       int group = used_sparse_group[gi];
       const int num_bin = feature_groups_[group]->num_total_bin_;
-      if (num_bin >= hist_buf[0].size()) {
+      if (num_bin > static_cast<int>(hist_buf[0].size())) {
         #pragma omp parallel for schedule(static)
         for (int tid = 0; tid < num_threads; ++tid) {
           hist_buf[tid].resize(num_bin);
         }
       }
-      data_size_t step = num_data / num_threads;
+      data_size_t step = (num_data + num_threads - 1) / num_threads;
       #pragma omp parallel for schedule(static)
       for (int tid = 0; tid < num_threads; ++tid) {
         data_size_t start = tid * step;
@@ -1105,12 +1105,16 @@ void Dataset::ConstructHistograms(const std::vector<int8_t>& is_feature_used,
 
       auto data_ptr = hist_data + group_bin_boundaries_[group];
       std::memset(reinterpret_cast<void*>(data_ptr + 1), 0, (num_bin - 1) * sizeof(HistogramBinEntry));
+
       #pragma omp parallel for schedule(static)
       for (int i = 0; i < num_bin; i++) {
         for (int tid = 0; tid < num_threads; ++tid) {
           data_ptr[i].sum_gradients += hist_buf[tid][i].sum_gradients;
           data_ptr[i].sum_hessians += hist_buf[tid][i].sum_hessians;
           data_ptr[i].cnt += hist_buf[tid][i].cnt;
+        }
+        if (is_constant_hessian) {
+          data_ptr[i].sum_hessians = data_ptr[i].cnt * hessians[0];
         }
       }
     }
