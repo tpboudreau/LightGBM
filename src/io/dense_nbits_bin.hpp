@@ -80,6 +80,7 @@ public:
     data_size_t i = start;
     for (; i < end - rest; i += 4) {
       if (i + prefetch_size < end) {
+        PREFETCH_T0(data_indices + i + prefetch_size);
         PREFETCH_T0(data_.data() + (data_indices[i + prefetch_size] >> 1));
         PREFETCH_T0(ordered_gradients + i + prefetch_size);
         PREFETCH_T0(ordered_hessians + i + prefetch_size);
@@ -169,6 +170,7 @@ public:
     data_size_t i = start;
     for (; i < end - rest; i += 4) {
       if (i + prefetch_size < end) {
+        PREFETCH_T0(data_indices + i + prefetch_size);
         PREFETCH_T0(data_.data() + (data_indices[i + prefetch_size] >> 1));
         PREFETCH_T0(ordered_gradients + i + prefetch_size);
       }
