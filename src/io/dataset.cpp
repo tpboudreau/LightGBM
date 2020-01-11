@@ -83,7 +83,7 @@ std::vector<std::vector<int>> FindGroups(const std::vector<std::unique_ptr<BinMa
   const int max_search_group = 100;
   const int max_bin_per_group = 256;
   const data_size_t single_val_max_conflict_cnt = static_cast<data_size_t>(total_sample_cnt / 10000);
-  const data_size_t max_samples_per_multi_val_group = static_cast<data_size_t>(total_sample_cnt * 2);
+  const data_size_t max_samples_per_multi_val_group = static_cast<data_size_t>(total_sample_cnt * 5);
   multi_val_group->clear();
 
   Random rand(num_data);
@@ -179,8 +179,8 @@ std::vector<std::vector<int>> FindGroups(const std::vector<std::unique_ptr<BinMa
   group_used_row_cnt = group_used_row_cnt2;
   group_num_bin = group_num_bin2;
   multi_val_group->resize(features_in_group.size(), false);
-  const int max_feature_per_group = 255;
   const int max_concurrent_feature_per_group = 32;
+  const int max_bin_per_multi_val_group = 8192;
 
   // second round: fill the multi-val group
   for (auto fidx : second_round_features) {
@@ -188,10 +188,10 @@ std::vector<std::vector<int>> FindGroups(const std::vector<std::unique_ptr<BinMa
     const int cur_non_zero_cnt = is_filtered_feature ? 0 : num_per_col[fidx];
     std::vector<int> available_groups;
     for (int gid = 0; gid < static_cast<int>(features_in_group.size()); ++gid) {
-      if (multi_val_group->at(gid) && static_cast<int>(features_in_group[gid].size()) >= max_feature_per_group) {
+      auto cur_num_bin = group_num_bin[gid] + bin_mappers[fidx]->num_bin() + (bin_mappers[fidx]->GetDefaultBin() == 0 ? -1 : 0);
+      if (multi_val_group->at(gid) && group_num_bin[gid] + cur_num_bin > max_bin_per_multi_val_group) {
         continue;
       }
-      auto cur_num_bin = group_num_bin[gid] + bin_mappers[fidx]->num_bin() + (bin_mappers[fidx]->GetDefaultBin() == 0 ? -1 : 0);
       const int max_sample_cnt = forced_single_val_group[gid] ? total_sample_cnt + single_val_max_conflict_cnt : max_samples_per_multi_val_group;
       if (group_total_data_cnt[gid] + cur_non_zero_cnt <= max_sample_cnt) {
         if (!is_use_gpu || cur_num_bin <= max_bin_per_group) {
