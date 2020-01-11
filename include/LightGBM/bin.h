@@ -342,7 +342,8 @@ class Bin {
   *        ordered_gradients and ordered_hessians are preprocessed, and they are re-ordered by data_indices.
   *        Ordered_gradients[i] is aligned with data_indices[i]'s gradients (same for ordered_hessians).
   * \param data_indices Used data indices in current leaf
-  * \param num_data Number of used data
+  * \param start start index in data_indices
+  * \param end end index in data_indices
   * \param ordered_gradients Pointer to gradients, the data_indices[i]-th data's gradient is ordered_gradients[i]
   * \param ordered_hessians Pointer to hessians, the data_indices[i]-th data's hessian is ordered_hessians[i]
   * \param out Output Result
@@ -364,7 +365,8 @@ class Bin {
   *        ordered_gradients and ordered_hessians are preprocessed, and they are re-ordered by data_indices.
   *        Ordered_gradients[i] is aligned with data_indices[i]'s gradients (same for ordered_hessians).
   * \param data_indices Used data indices in current leaf
-  * \param num_data Number of used data
+  * \param start start index in data_indices
+  * \param end end index in data_indices
   * \param ordered_gradients Pointer to gradients, the data_indices[i]-th data's gradient is ordered_gradients[i]
   * \param out Output Result
   */
