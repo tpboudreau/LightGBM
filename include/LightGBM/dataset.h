@@ -624,6 +624,7 @@ class Dataset {
   int min_data_in_bin_;
   bool use_missing_;
   bool zero_as_missing_;
+  mutable std::vector<HistogramBinEntry> hist_buf_;
 };
 
 }  // namespace LightGBM

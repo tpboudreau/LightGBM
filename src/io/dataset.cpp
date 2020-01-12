@@ -18,6 +18,14 @@
 
 namespace LightGBM {
 
+
+#ifdef TIMETAG
+std::chrono::duration<double, std::milli> dense_bin_time;
+std::chrono::duration<double, std::milli> sparse_bin_time;
+std::chrono::duration<double, std::milli> sparse_hist_prep_time;
+std::chrono::duration<double, std::milli> sparse_hist_merge_time;
+#endif  // TIMETAG
+
 const char* Dataset::binary_file_token = "______LightGBM_Binary_File_Token______\n";
 
 Dataset::Dataset() {
@@ -36,6 +44,12 @@ Dataset::Dataset(data_size_t num_data) {
 }
 
 Dataset::~Dataset() {
+  #ifdef TIMETAG
+  Log::Info("Dataset::dense_bin_time costs %f", dense_bin_time * 1e-3);
+  Log::Info("Dataset::sparse_bin_time costs %f", sparse_bin_time * 1e-3);
+  Log::Info("Dataset::sparse_hist_prep_time costs %f", sparse_hist_prep_time * 1e-3);
+  Log::Info("Dataset::sparse_hist_merge_time costs %f", sparse_hist_merge_time * 1e-3);
+  #endif
 }
 
 std::vector<std::vector<int>> NoGroup(
@@ -83,7 +97,7 @@ std::vector<std::vector<int>> FindGroups(const std::vector<std::unique_ptr<BinMa
   const int max_search_group = 100;
   const int max_bin_per_group = 256;
   const data_size_t single_val_max_conflict_cnt = static_cast<data_size_t>(total_sample_cnt / 10000);
-  const data_size_t max_samples_per_multi_val_group = static_cast<data_size_t>(total_sample_cnt * 5);
+  const data_size_t max_samples_per_multi_val_group = static_cast<data_size_t>(total_sample_cnt * 10);
   multi_val_group->clear();
 
   Random rand(num_data);
@@ -180,7 +194,7 @@ std::vector<std::vector<int>> FindGroups(const std::vector<std::unique_ptr<BinMa
   group_num_bin = group_num_bin2;
   multi_val_group->resize(features_in_group.size(), false);
   const int max_concurrent_feature_per_group = 32;
-  const int max_bin_per_multi_val_group = 8192;
+  const int max_bin_per_multi_val_group = 1 << 14;
 
   // second round: fill the multi-val group
   for (auto fidx : second_round_features) {
@@ -940,6 +954,9 @@ void Dataset::ConstructHistograms(const std::vector<int8_t>& is_feature_used,
 
   auto ptr_ordered_grad = gradients;
   auto ptr_ordered_hess = hessians;
+  #ifdef TIMETAG
+  auto start_time = std::chrono::steady_clock::now();
+  #endif
   if (data_indices != nullptr && num_data < num_data_) {
     if (!is_constant_hessian) {
       #pragma omp parallel for schedule(static)
@@ -1048,25 +1065,30 @@ void Dataset::ConstructHistograms(const std::vector<int8_t>& is_feature_used,
       OMP_THROW_EX();
     }
   }
-
+  #ifdef TIMETAG
+  dense_bin_time  += std::chrono::steady_clock::now() - start_time;
+  #endif
   // for sparse bin
   if (num_used_sparse_group > 0) {
-    std::vector<std::vector<HistogramBinEntry>> hist_buf(num_threads);
     for (int gi = 0; gi < num_used_sparse_group; ++gi) {
+      #ifdef TIMETAG
+      start_time = std::chrono::steady_clock::now();
+      #endif
       int group = used_sparse_group[gi];
       const int num_bin = feature_groups_[group]->num_total_bin_;
-      if (num_bin > static_cast<int>(hist_buf[0].size())) {
-        #pragma omp parallel for schedule(static)
-        for (int tid = 0; tid < num_threads; ++tid) {
-          hist_buf[tid].resize(num_bin);
-        }
+      if (num_bin * num_threads > static_cast<int>(hist_buf_.size())) {
+        hist_buf_.resize(num_bin * num_threads);
       }
+      #ifdef TIMETAG
+      sparse_hist_prep_time += std::chrono::steady_clock::now() - start_time;
+      start_time = std::chrono::steady_clock::now();
+      #endif
       data_size_t step = (num_data + num_threads - 1) / num_threads;
       #pragma omp parallel for schedule(static)
       for (int tid = 0; tid < num_threads; ++tid) {
         data_size_t start = tid * step;
         data_size_t end = std::min(start + step, num_data);
-        auto data_ptr = hist_buf[tid].data();
+        auto data_ptr = hist_buf_.data() + tid * num_bin;
         std::memset(reinterpret_cast<void*>(data_ptr + 1), 0, (num_bin - 1) * sizeof(HistogramBinEntry));
         if (data_indices != nullptr && num_data < num_data_) {
           if (!is_constant_hessian) {
@@ -1102,21 +1124,49 @@ void Dataset::ConstructHistograms(const std::vector<int8_t>& is_feature_used,
           }
         }
       }
-
+      #ifdef TIMETAG
+      sparse_bin_time += std::chrono::steady_clock::now() - start_time;
+      start_time = std::chrono::steady_clock::now();
+      #endif
       auto data_ptr = hist_data + group_bin_boundaries_[group];
       std::memset(reinterpret_cast<void*>(data_ptr + 1), 0, (num_bin - 1) * sizeof(HistogramBinEntry));
 
-      #pragma omp parallel for schedule(static)
-      for (int i = 0; i < num_bin; i++) {
-        for (int tid = 0; tid < num_threads; ++tid) {
-          data_ptr[i].sum_gradients += hist_buf[tid][i].sum_gradients;
-          data_ptr[i].sum_hessians += hist_buf[tid][i].sum_hessians;
-          data_ptr[i].cnt += hist_buf[tid][i].cnt;
+      // don't merge bin 0
+      const int num_bin_per_threads = (num_bin + num_threads - 2) / num_threads;
+      if (!is_constant_hessian) {
+        #pragma omp parallel for schedule(static)
+        for (int t = 0; t < num_threads; ++t) {
+          const int start = t * num_bin_per_threads + 1;
+          const int end = std::min(start + num_bin_per_threads, num_bin);
+          for (int tid = 0; tid < num_threads; ++tid) {
+            auto src_ptr = hist_buf_.data() + tid * num_bin;
+            for (int i = start; i < end; i++) {
+              data_ptr[i].sum_gradients += src_ptr[i].sum_gradients;
+              data_ptr[i].sum_hessians += src_ptr[i].sum_hessians;
+              data_ptr[i].cnt += src_ptr[i].cnt;
+            }
+          }
         }
-        if (is_constant_hessian) {
-          data_ptr[i].sum_hessians = data_ptr[i].cnt * hessians[0];
+      } else {
+        #pragma omp parallel for schedule(static)
+        for (int t = 0; t < num_threads; ++t) {
+          const int start = t * num_bin_per_threads + 1;
+          const int end = std::min(start + num_bin_per_threads, num_bin);
+          for (int tid = 0; tid < num_threads; ++tid) {
+            auto src_ptr = hist_buf_.data() + tid * num_bin;
+            for (int i = start; i < end; i++) {
+              data_ptr[i].sum_gradients += src_ptr[i].sum_gradients;
+              data_ptr[i].cnt += src_ptr[i].cnt;
+            }
+          }
+          for (int i = start; i < end; i++) {
+            data_ptr[i].sum_hessians = data_ptr[i].cnt * hessians[0];
+          }
         }
       }
+      #ifdef TIMETAG
+      sparse_hist_merge_time += std::chrono::steady_clock::now() - start_time;
+      #endif
     }
   }
 }
