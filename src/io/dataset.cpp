@@ -193,7 +193,7 @@ std::vector<std::vector<int>> FindGroups(const std::vector<std::unique_ptr<BinMa
   group_used_row_cnt = group_used_row_cnt2;
   group_num_bin = group_num_bin2;
   multi_val_group->resize(features_in_group.size(), false);
-  const int max_concurrent_feature_per_group = 32;
+  const int max_concurrent_feature_per_group = 64;
   const int max_bin_per_multi_val_group = 1 << 14;
 
   // second round: fill the multi-val group
@@ -1078,6 +1078,7 @@ void Dataset::ConstructHistograms(const std::vector<int8_t>& is_feature_used,
       const int num_bin = feature_groups_[group]->num_total_bin_;
       if (num_bin * num_threads > static_cast<int>(hist_buf_.size())) {
         hist_buf_.resize(num_bin * num_threads);
+        Log::Info("number of buffered bin %d", num_bin);
       }
       #ifdef TIMETAG
       sparse_hist_prep_time += std::chrono::steady_clock::now() - start_time;
@@ -1132,10 +1133,12 @@ void Dataset::ConstructHistograms(const std::vector<int8_t>& is_feature_used,
       std::memset(reinterpret_cast<void*>(data_ptr + 1), 0, (num_bin - 1) * sizeof(HistogramBinEntry));
 
       // don't merge bin 0
-      const int num_bin_per_threads = (num_bin + num_threads - 2) / num_threads;
+      const int min_block_size = 512;
+      const int n_block = std::min(num_threads, (num_bin + min_block_size - 1) / min_block_size);
+      const int num_bin_per_threads = (num_bin + n_block - 2) / n_block;
       if (!is_constant_hessian) {
         #pragma omp parallel for schedule(static)
-        for (int t = 0; t < num_threads; ++t) {
+        for (int t = 0; t < n_block; ++t) {
           const int start = t * num_bin_per_threads + 1;
           const int end = std::min(start + num_bin_per_threads, num_bin);
           for (int tid = 0; tid < num_threads; ++tid) {
@@ -1144,12 +1147,13 @@ void Dataset::ConstructHistograms(const std::vector<int8_t>& is_feature_used,
               data_ptr[i].sum_gradients += src_ptr[i].sum_gradients;
               data_ptr[i].sum_hessians += src_ptr[i].sum_hessians;
               data_ptr[i].cnt += src_ptr[i].cnt;
+              PREFETCH_T0(src_ptr + i + 4);
             }
           }
         }
       } else {
         #pragma omp parallel for schedule(static)
-        for (int t = 0; t < num_threads; ++t) {
+        for (int t = 0; t < n_block; ++t) {
           const int start = t * num_bin_per_threads + 1;
           const int end = std::min(start + num_bin_per_threads, num_bin);
           for (int tid = 0; tid < num_threads; ++tid) {
@@ -1157,6 +1161,7 @@ void Dataset::ConstructHistograms(const std::vector<int8_t>& is_feature_used,
             for (int i = start; i < end; i++) {
               data_ptr[i].sum_gradients += src_ptr[i].sum_gradients;
               data_ptr[i].cnt += src_ptr[i].cnt;
+              PREFETCH_T0(src_ptr + i + 4);
             }
           }
           for (int i = start; i < end; i++) {
