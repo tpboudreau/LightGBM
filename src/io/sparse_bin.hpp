@@ -24,7 +24,7 @@ const size_t kNumFastIndex = 64;
 
 template <typename VAL_T>
 class SparseBinIterator: public BinIterator {
- public:
+public:
   SparseBinIterator(const SparseBin<VAL_T>* bin_data,
     uint32_t min_bin, uint32_t max_bin, uint32_t default_bin)
     : bin_data_(bin_data), min_bin_(static_cast<VAL_T>(min_bin)),
@@ -53,11 +53,9 @@ class SparseBinIterator: public BinIterator {
     }
   }
 
-  inline VAL_T NextNonZero(data_size_t idx);
-
   inline void Reset(data_size_t idx) override;
 
- private:
+private:
   const SparseBin<VAL_T>* bin_data_;
   data_size_t cur_pos_;
   data_size_t i_delta_;
@@ -67,17 +65,16 @@ class SparseBinIterator: public BinIterator {
   uint8_t offset_;
 };
 
-
 template <typename VAL_T>
 class SparseBin: public Bin {
- public:
+public:
   friend class SparseBinIterator<VAL_T>;
 
   explicit SparseBin(data_size_t num_data)
     : num_data_(num_data) {
     int num_threads = 1;
-#pragma omp parallel
-#pragma omp master
+    #pragma omp parallel
+    #pragma omp master
     {
       num_threads = omp_get_num_threads();
     }
@@ -100,48 +97,101 @@ class SparseBin: public Bin {
 
   BinIterator* GetIterator(uint32_t min_bin, uint32_t max_bin, uint32_t default_bin) const override;
 
-  void ConstructHistogram(const data_size_t*, data_size_t, data_size_t, const score_t*,
-    const score_t*, HistogramBinEntry*) const override {
-    Log::Fatal("Not Implemented.");
+  void ConstructHistogram(const data_size_t* data_indices, data_size_t start, data_size_t end,
+    const score_t* ordered_gradients, const score_t* ordered_hessians,
+    HistogramBinEntry* out) const override {
+    data_size_t i_delta, cur_pos;
+    InitIndex(data_indices[start], &i_delta, &cur_pos);
+    data_size_t i = start;
+    for (;;) {
+      if (cur_pos < data_indices[i]) {
+        cur_pos += deltas_[++i_delta];
+        if (i_delta >= num_vals_) { break; }
+      } else if (cur_pos > data_indices[i]) {
+        if (++i >= end) { break; }
+      } else {
+        const VAL_T bin = vals_[i_delta];
+        out[bin].sum_gradients += ordered_gradients[i];
+        out[bin].sum_hessians += ordered_hessians[i];
+        ++out[bin].cnt;
+        if (++i >= end) { break; }
+        cur_pos += deltas_[++i_delta];
+        if (i_delta >= num_vals_) { break; }
+      }
+    }
   }
 
-  void ConstructHistogram(data_size_t, data_size_t, const score_t*,
-                          const score_t*, HistogramBinEntry*) const override {
-    Log::Fatal("Not Implemented.");
+  void ConstructHistogram(data_size_t start, data_size_t end,
+    const score_t* ordered_gradients, const score_t* ordered_hessians,
+    HistogramBinEntry* out) const override {
+    data_size_t i_delta, cur_pos;
+    InitIndex(start, &i_delta, &cur_pos);
+    while (cur_pos < start && i_delta < num_vals_) {
+      cur_pos += deltas_[++i_delta];
+    }
+    while (cur_pos < end && i_delta < num_vals_) {
+      const VAL_T bin = vals_[i_delta];
+      out[bin].sum_gradients += ordered_gradients[cur_pos];
+      out[bin].sum_hessians += ordered_hessians[cur_pos];
+      ++out[bin].cnt;
+      cur_pos += deltas_[++i_delta];
+    }
   }
 
-  void ConstructHistogram(const data_size_t*, data_size_t, data_size_t, const score_t*,
-                          HistogramBinEntry*) const override {
-    Log::Fatal("Not Implemented.");
+  void ConstructHistogram(const data_size_t* data_indices, data_size_t start, data_size_t end,
+    const score_t* ordered_gradients,
+    HistogramBinEntry* out) const override {
+    data_size_t i_delta, cur_pos;
+    InitIndex(data_indices[start], &i_delta, &cur_pos);
+    data_size_t i = start;
+    for (;;) {
+      if (cur_pos < data_indices[i]) {
+        cur_pos += deltas_[++i_delta];
+        if (i_delta >= num_vals_) { break; }
+      } else if (cur_pos > data_indices[i]) {
+        if (++i >= end) { break; }
+      } else {
+        const VAL_T bin = vals_[i_delta];
+        out[bin].sum_gradients += ordered_gradients[i];
+        ++out[bin].cnt;
+        if (++i >= end) { break; }
+        cur_pos += deltas_[++i_delta];
+        if (i_delta >= num_vals_) { break; }
+      }
+    }
   }
 
-  void ConstructHistogram(data_size_t, data_size_t, const score_t*,
-                          HistogramBinEntry*) const override {
-    Log::Fatal("Not Implemented.");
+  void ConstructHistogram(data_size_t start, data_size_t end,
+    const score_t* ordered_gradients,
+    HistogramBinEntry* out) const override {
+    data_size_t i_delta, cur_pos;
+    InitIndex(start, &i_delta, &cur_pos);
+    while (cur_pos < start && i_delta < num_vals_) {
+      cur_pos += deltas_[++i_delta];
+    }
+    while (cur_pos < end && i_delta < num_vals_) {
+      const VAL_T bin = vals_[i_delta];
+      out[bin].sum_gradients += ordered_gradients[cur_pos];
+      ++out[bin].cnt;
+      cur_pos += deltas_[++i_delta];
+    }
   }
 
   inline void NextNonzeroFast(data_size_t* i_delta,
     data_size_t* cur_pos) const {
-    ++(*i_delta);
-    data_size_t shift = 0;
-    data_size_t delta = deltas_[*i_delta];
-    while (*i_delta < num_vals_ && vals_[*i_delta] == 0) {
-      ++(*i_delta);
-      shift += 8;
-      delta |= static_cast<data_size_t>(deltas_[*i_delta]) << shift;
-    }
-    *cur_pos += delta;
+    *cur_pos += deltas_[++(*i_delta)];
     if (*i_delta >= num_vals_) {
       *cur_pos = num_data_;
-    } 
+    }
   }
 
   inline bool NextNonzero(data_size_t* i_delta,
-                          data_size_t* cur_pos) const {
-    NextNonzeroFast(i_delta, cur_pos);
+    data_size_t* cur_pos) const {
+    *cur_pos += deltas_[++(*i_delta)];
     if (*i_delta < num_vals_) {
       return true;
     } else {
+      *cur_pos = num_data_;
       return false;
     }
   }
@@ -256,8 +306,8 @@ class SparseBin: public Bin {
     // sort by data index
     std::sort(idx_val_pairs.begin(), idx_val_pairs.end(),
       [](const std::pair<data_size_t, VAL_T>& a, const std::pair<data_size_t, VAL_T>& b) {
-      return a.first < b.first;
-    });
+        return a.first < b.first;
+      });
     // load delta array
     LoadFromPair(idx_val_pairs);
   }
@@ -271,10 +321,12 @@ class SparseBin: public Bin {
       const data_size_t cur_idx = idx_val_pairs[i].first;
       const VAL_T bin = idx_val_pairs[i].second;
       data_size_t cur_delta = cur_idx - last_idx;
+      // disallow the multi-val in one row
+      if (i > 0 && cur_delta == 0) { continue; }
       while (cur_delta >= 256) {
-        deltas_.push_back(cur_delta & 0xff);
+        deltas_.push_back(255);
         vals_.push_back(0);
-        cur_delta >>= 8;
+        cur_delta -= 255;
       }
       deltas_.push_back(static_cast<uint8_t>(cur_delta));
       vals_.push_back(bin);
@@ -363,7 +415,7 @@ class SparseBin: public Bin {
         while (cur_pos < idx && j < num_vals_) {
           NextNonzero(&j, &cur_pos);
         }
-        if (cur_pos == idx && j < num_vals_) {
+        if (cur_pos == idx && j < num_vals_ && vals_[j] > 0) {
           // new row index is i
           tmp_pair.emplace_back(i, vals_[j]);
         }
@@ -385,17 +437,16 @@ class SparseBin: public Bin {
     data_size_t last_idx = 0;
     for (data_size_t i = 0; i < num_used_indices; ++i) {
       auto bin = iterator.InnerRawGet(used_indices[i]);
-      while(bin > 0) {
+      if (bin > 0) {
         data_size_t cur_delta = i - last_idx;
         while (cur_delta >= 256) {
-          deltas_.push_back(cur_delta & 0xff);
+          deltas_.push_back(255);
           vals_.push_back(0);
-          cur_delta >>= 8;
+          cur_delta -= 255;
         }
         deltas_.push_back(static_cast<uint8_t>(cur_delta));
         vals_.push_back(bin);
         last_idx = i;
-        bin = iterator.NextNonZero(used_indices[i]);
       }
     }
     // avoid out of range
@@ -418,7 +469,19 @@ class SparseBin: public Bin {
     fast_index_(other.fast_index_), fast_index_shift_(other.fast_index_shift_) {
   }
 
- private:
+  void InitIndex(data_size_t start_idx, data_size_t * i_delta, data_size_t * cur_pos) const {
+    auto idx = start_idx >> fast_index_shift_;
+    if (static_cast<size_t>(idx) < fast_index_.size()) {
+      const auto fast_pair = fast_index_[start_idx >> fast_index_shift_];
+      *i_delta = fast_pair.first;
+      *cur_pos = fast_pair.second;
+    } else {
+      *i_delta = -1;
+      *cur_pos = 0;
+    }
+  }
+
+private:
 
   data_size_t num_data_;
   std::vector<uint8_t> deltas_;
@@ -447,26 +510,8 @@ inline VAL_T SparseBinIterator<VAL_T>::InnerRawGet(data_size_t idx) {
 }
 
 template <typename VAL_T>
-inline VAL_T SparseBinIterator<VAL_T>::NextNonZero(data_size_t idx) {
-  bin_data_->NextNonzeroFast(&i_delta_, &cur_pos_);
-  if (cur_pos_ == idx) {
-    return bin_data_->vals_[i_delta_];
-  } else {
-    return 0;
-  }
-}
-
-template <typename VAL_T>
 inline void SparseBinIterator<VAL_T>::Reset(data_size_t start_idx) {
-  auto idx = start_idx >> bin_data_->fast_index_shift_;
-  if (static_cast<size_t>(idx) < bin_data_->fast_index_.size()) {
-    const auto fast_pair = bin_data_->fast_index_[start_idx >> bin_data_->fast_index_shift_];
-    i_delta_ = fast_pair.first;
-    cur_pos_ = fast_pair.second;
-  } else {
-    i_delta_ = -1;
-    cur_pos_ = 0;
-  }
+  bin_data_->InitIndex(start_idx, &i_delta_, &cur_pos_);
 }
 
 template <typename VAL_T>
