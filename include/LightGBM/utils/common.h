@@ -1083,6 +1083,32 @@ class FunctionTimer {
   Timer& timer_;
 };
 
+template <typename T>
+inline std::string JoinJSON(const std::vector<T>& vc) {
+  std::stringstream ss;
+  ss << "[";
+  int i = 0;
+  for ( T vu : vc ) {
+    ss << ( i == 0 ? "" : ", " ) << vu;
+    ++i;
+  }
+  ss << "]";
+  return ss.str();
+}
+
+template <>
+inline std::string JoinJSON<std::string>(const std::vector<std::string>& vc) {
+  std::stringstream ss;
+  ss << "[";
+  int i = 0;
+  for ( const std::string& vu : vc ) {
+    ss << ( i == 0 ? "\"" : ", \"" ) << vu << "\"";
+    ++i;
+  }
+  ss << "]";
+  return ss.str();
+}
+
 }  // namespace Common
 
 extern Common::Timer global_timer;

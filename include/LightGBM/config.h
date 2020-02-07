@@ -30,7 +30,10 @@ const int kDefaultNumLeaves = 31;
 
 struct Config {
  public:
+
   std::string ToString() const;
+  std::string ToJSON() const;
+
   /*!
   * \brief Get string value by specific name of key
   * \param params Store the key and value for params
@@ -77,6 +80,7 @@ struct Config {
 
   static void KV2Map(std::unordered_map<std::string, std::string>* params, const char* kv);
   static std::unordered_map<std::string, std::string> Str2Map(const char* parameters);
+  static std::unordered_map<std::string, std::string> LoadedStr2Map(const char* loaded_parameters);
 
   #pragma region Parameters
 

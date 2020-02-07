@@ -77,7 +77,18 @@ std::string GBDT::DumpModel(int start_iteration, int num_iteration) const {
       str_buf << "\"" << pairs[i].second << "\":" << std::to_string(pairs[i].first);
     }
   }
-  str_buf << "}" << '\n';
+  str_buf << "}," << '\n';
+
+  if (config_ != nullptr) {
+    str_buf << "\"parameters\": " << config_->ToJSON() << "\n";
+  } else if (!loaded_parameter_.empty()) {
+    auto pm = Config::LoadedStr2Map(loaded_parameter_.c_str());
+    Config cf;
+    cf.Set(pm);
+    str_buf << "\"parameters\": " << cf.ToJSON() << "\n";
+  } else {
+    str_buf << "\"parameters\": null" << '\n';
+  }
 
   str_buf << "}" << '\n';
 
