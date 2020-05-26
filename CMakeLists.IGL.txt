@@ -1,0 +1,81 @@
+
+# Build Independent OpenCL library
+include(FetchContent)
+FetchContent_Declare(OpenCL-Headers GIT_REPOSITORY https://github.com/KhronosGroup/OpenCL-Headers.git GIT_TAG v2020.03.13)
+FetchContent_GetProperties(OpenCL-Headers)
+if(NOT OpenCL-Headers_POPULATED)
+  FetchContent_Populate(OpenCL-Headers)
+  message(STATUS "Populated OpenCL Headers")
+endif()
+set(OPENCL_ICD_LOADER_HEADERS_DIR ${opencl-headers_SOURCE_DIR} CACHE PATH "") # for OpenCL ICD Loader
+set(OpenCL_INCLUDE_DIR ${opencl-headers_SOURCE_DIR} CACHE PATH "") # for Boost::Compute
+
+#FetchContent_Declare(OpenCL-ICD-Loader GIT_REPOSITORY https://github.com/KhronosGroup/OpenCL-ICD-Loader.git GIT_TAG bbdf079426d859fb8a68c332b41b714f9c87d6ad)
+FetchContent_Declare(OpenCL-ICD-Loader GIT_REPOSITORY https://github.com/tpboudreau/OpenCL-ICD-Loader.git GIT_TAG e42b3464e63f30cb0b818d88b836dd9e02ddbd7b)
+FetchContent_GetProperties(OpenCL-ICD-Loader)
+if(NOT OpenCL-ICD-Loader_POPULATED)
+  FetchContent_Populate(OpenCL-ICD-Loader)
+  set(BUILD_SHARED_LIBS OFF)
+  if(WIN32)
+    set(USE_DYNAMIC_VCXX_RUNTIME ON)
+  else()
+    set(OPENCL_ICD_LOADER_PIC ON)
+  endif()
+  add_subdirectory(${opencl-icd-loader_SOURCE_DIR} ${opencl-icd-loader_BINARY_DIR} EXCLUDE_FROM_ALL)
+  message(STATUS "Populated OpenCL ICD Loader")
+endif()
+list(APPEND INDEPENDENT_GPU_LIBRARY_INCLUDES ${OPENCL_ICD_LOADER_HEADERS_DIR})
+if(WIN32)
+  list(APPEND INDEPENDENT_GPU_LIBRARY_LIBRARIES ${opencl-icd-loader_BINARY_DIR}/Release/OpenCL.lib cfgmgr32.lib runtimeobject.lib) #FIXME "Release" / MinGW
+  #if(MSVC)
+    #list(APPEND INDEPENDENT_GPU_LIBRARY_LIBRARIES ${PROJECT_BINARY_DIR}/OpenCL.lib)
+  #else()
+  #endif()
+else()
+  list(APPEND INDEPENDENT_GPU_LIBRARY_LIBRARIES ${opencl-icd-loader_BINARY_DIR}/libOpenCL.a )
+endif()
+list(APPEND INDEPENDENT_GPU_LIBRARY_DEFINITIONS CL_TARGET_OPENCL_VERSION=220)
+
+# Build Independent Boost libraries
+include(ExternalProject)
+#include(ProcessorCount)
+#ProcessorCount(P)
+set(BOOST_BASE "${PROJECT_BINARY_DIR}/Boost")
+if(WIN32)
+  set(BOOST_BOOTSTRAP "${BOOST_BASE}/source/bootstrap.bat")
+  set(BOOST_BUILD "${BOOST_BASE}/source/b2.exe")
+  #set(BOOST_FLAGS "")
+else()
+  set(BOOST_BOOTSTRAP "${BOOST_BASE}/source/bootstrap.sh")
+  set(BOOST_BUILD "${BOOST_BASE}/source/b2")
+  set(BOOST_FLAGS -fPIC)
+endif()
+ExternalProject_Add(Boost
+  TMP_DIR "${BOOST_BASE}/tmp"
+  STAMP_DIR "${BOOST_BASE}/stamp"
+  DOWNLOAD_DIR "${BOOST_BASE}/download"
+  SOURCE_DIR "${BOOST_BASE}/source"
+  BINARY_DIR "${BOOST_BASE}/source"
+  INSTALL_DIR "${BOOST_BASE}/install"
+  GIT_REPOSITORY https://github.com/boostorg/boost.git
+  GIT_TAG boost-1.73.0
+  #GIT_SUBMODULES libs/headers libs/compute libs/config libs/filesystem libs/system tools/*
+  GIT_SHALLOW ON
+  UPDATE_COMMAND ""
+  PATCH_COMMAND ""
+  CONFIGURE_COMMAND ${BOOST_BOOTSTRAP}
+  BUILD_COMMAND ${BOOST_BUILD} -sBOOST_ROOT=${BOOST_BASE}/source -a -q --with-headers --with-chrono --with-filesystem --with-system link=static runtime-link=shared variant=release threading=multi cxxflags="${BOOST_FLAGS}"
+  INSTALL_COMMAND ""
+)
+set(BOOST_INCLUDE ${BOOST_BASE}/source CACHE PATH "")
+set(BOOST_LIBRARY ${BOOST_BASE}/source/stage/lib CACHE PATH "")
+list(APPEND INDEPENDENT_GPU_LIBRARY_INCLUDES ${BOOST_INCLUDE})
+if(WIN32)
+  list(APPEND INDEPENDENT_GPU_LIBRARY_LIBRARIES ${BOOST_LIBRARY}/libboost_filesystem-vc142-mt-x64-1_73.lib ${BOOST_LIBRARY}/libboost_system-vc142-mt-x64-1_73.lib ${BOOST_LIBRARY}/libboost_chrono-vc142-mt-x64-1_73.lib)
+  #if(MSVC)
+  #else()
+  #endif()
+else()
+  list(APPEND INDEPENDENT_GPU_LIBRARY_LIBRARIES ${BOOST_LIBRARY}/libboost_filesystem.a ${BOOST_LIBRARY}/libboost_system.a)
+endif()
+
