@@ -49,7 +49,7 @@ else()
   set(BOOST_BOOTSTRAP "${BOOST_BASE}/source/bootstrap.sh")
   set(BOOST_BUILD "${BOOST_BASE}/source/b2")
   set(BOOST_FLAGS -fPIC)
-  list(APPEND BOOST_SUBMODULES "libs/compute" "libs/chrono" "libs/config" "libs/filesystem" "libs/headers" "libs/system" "tools/*")
+  list(APPEND BOOST_SUBMODULES "libs/compute" "libs/chrono" "libs/config" "libs/filesystem" "libs/headers" "libs/io" "libs/predef" "libs/system" "libs/uuid" "tools/*")
 endif()
 ExternalProject_Add(Boost
   TMP_DIR "${BOOST_BASE}/tmp"
