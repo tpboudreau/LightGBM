@@ -44,10 +44,12 @@ if(WIN32)
   set(BOOST_BOOTSTRAP "${BOOST_BASE}/source/bootstrap.bat")
   set(BOOST_BUILD "${BOOST_BASE}/source/b2.exe")
   #set(BOOST_FLAGS "")
+  list(APPEND BOOST_SUBMODULES "libs/*" "tools/*")
 else()
   set(BOOST_BOOTSTRAP "${BOOST_BASE}/source/bootstrap.sh")
   set(BOOST_BUILD "${BOOST_BASE}/source/b2")
   set(BOOST_FLAGS -fPIC)
+  list(APPEND BOOST_SUBMODULES "libs/compute" "libs/chrono" "libs/config" "libs/filesystem" "libs/headers" "libs/system" "tools/*")
 endif()
 ExternalProject_Add(Boost
   TMP_DIR "${BOOST_BASE}/tmp"
@@ -58,7 +60,7 @@ ExternalProject_Add(Boost
   INSTALL_DIR "${BOOST_BASE}/install"
   GIT_REPOSITORY https://github.com/boostorg/boost.git
   GIT_TAG boost-${BOOST_VERSION_DOT}.0
-  GIT_SUBMODULES libs/compute libs/chrono libs/config libs/filesystem libs/headers libs/io libs/system libs/uuid tools/*
+  GIT_SUBMODULES ${BOOST_SUBMODULES}
   GIT_SHALLOW ON
   UPDATE_COMMAND ""
   PATCH_COMMAND ""
@@ -70,12 +72,12 @@ set(BOOST_INCLUDE ${BOOST_BASE}/source CACHE PATH "")
 set(BOOST_LIBRARY ${BOOST_BASE}/source/stage/lib CACHE PATH "")
 list(APPEND INDEPENDENT_GPU_LIBRARY_INCLUDES ${BOOST_INCLUDE})
 if(WIN32)
-  list(APPEND INDEPENDENT_GPU_LIBRARY_LIBRARIES ${BOOST_LIBRARY}/libboost_filesystem-vc142-mt-x64-${BOOST_VERSION_UNDERSCORE}.lib ${BOOST_LIBRARY}/libboost_system-vc142-mt-x64-${BOOST_VERSION_UNDERSCORE}.lib ${BOOST_LIBRARY}/libboost_chrono-vc142-mt-x64-${BOOST_VERSION_UNDERSCORE}.lib)
-  #if(MSVC)
-  #else()
-  #endif()
+  list(APPEND INDEPENDENT_GPU_LIBRARY_LIBRARIES ${BOOST_LIBRARY}/libboost_filesystem-vc142-mt-x64-${BOOST_VERSION_UNDERSCORE}.lib)
+  list(APPEND INDEPENDENT_GPU_LIBRARY_LIBRARIES ${BOOST_LIBRARY}/libboost_system-vc142-mt-x64-${BOOST_VERSION_UNDERSCORE}.lib)
+  list(APPEND INDEPENDENT_GPU_LIBRARY_LIBRARIES ${BOOST_LIBRARY}/libboost_chrono-vc142-mt-x64-${BOOST_VERSION_UNDERSCORE}.lib)
 else()
-  list(APPEND INDEPENDENT_GPU_LIBRARY_LIBRARIES ${BOOST_LIBRARY}/libboost_filesystem.a ${BOOST_LIBRARY}/libboost_system.a)
+  list(APPEND INDEPENDENT_GPU_LIBRARY_LIBRARIES ${BOOST_LIBRARY}/libboost_filesystem.a)
+  list(APPEND INDEPENDENT_GPU_LIBRARY_LIBRARIES ${BOOST_LIBRARY}/libboost_system.a)
 endif()
 
 set(BUILD_SHARED_LIBS ON CACHE BOOL "" FORCE)
