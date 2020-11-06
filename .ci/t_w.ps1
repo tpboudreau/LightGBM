@@ -45,13 +45,15 @@ curl https://ci.appveyor.com/api/projects/oblomov/clinfo/artifacts/clinfo.exe?jo
 .\clinfo.exe
 # /TEMPORARY
 
-Set-Variable -Name CONFIG_HEADER -Value "$env:BUILD_SOURCESDIRECTORY/include/LightGBM/config.h"
-(Get-Content (Get-Variable CONFIG_HEADER -valueOnly)).replace('std::string device_type = "cpu";', 'std::string device_type = "gpu";') | Set-Content (Get-Variable CONFIG_HEADER -valueOnly)
-If (!(Select-String -Path (Get-Variable CONFIG_HEADER -valueOnly) -Pattern 'std::string device_type = "gpu";' -Quiet)) {
-  Write-Output "Rewriting config.h for GPU device type failed"
-  Exit -1
-}
+#Write-Output "Updating config.h"
+#Set-Variable -Name CONFIG_HEADER -Value "$env:BUILD_SOURCESDIRECTORY/include/LightGBM/config.h"
+#(Get-Content (Get-Variable CONFIG_HEADER -valueOnly)).replace('std::string device_type = "cpu";', 'std::string device_type = "gpu";') | Set-Content (Get-Variable CONFIG_HEADER -valueOnly)
+#If (!(Select-String -Path (Get-Variable CONFIG_HEADER -valueOnly) -Pattern 'std::string device_type = "gpu";' -Quiet)) {
+#  Write-Output "Rewriting config.h for GPU device type failed"
+#  Exit -1
+#}
 
+#Write-Output "Building and installing wheel"
 cd $env:BUILD_SOURCESDIRECTORY/python-package
 python setup.py bdist_wheel --integrated-opencl --plat-name=win-amd64 --universal ; Check-Output $?
 cd dist; pip install --user @(Get-ChildItem *.whl) ; Check-Output $?
@@ -70,5 +72,6 @@ $env:LIGHTGBM_TEST_DUAL_CPU_GPU = "1"
 #  $tests = $env:BUILD_SOURCESDIRECTORY + "/tests"
 #}
 
+Write-Output "Running tests"
 pytest $tests ; Check-Output $?
 
