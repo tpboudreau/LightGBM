@@ -26,7 +26,8 @@ class TestBasic(unittest.TestCase):
             "metric": "auc",
             "min_data": 10,
             "num_leaves": 15,
-            "verbose": -1,
+            #"verbose": -1,
+            "verbose": 1,
             "num_threads": 1,
             "max_bin": 255,
             "gpu_use_dp": True
