@@ -50,8 +50,6 @@ elseif ($env:TASK -eq "sdist") {
 elseif ($env:TASK -eq "bdist") {
   # Install the Intel CPU runtime, so we can run tests against OpenCL
   Write-Output "Downloading OpenCL runtime"
-  #curl -o opencl_runtime_18.1_x64_setup.msi http://registrationcenter-download.intel.com/akdlm/irc_nas/vcp/13794/opencl_runtime_18.1_x64_setup.msi
-  #$msiarglist = "/i opencl_runtime_18.1_x64_setup.msi /quiet /norestart /log msi.log"
   curl -o opencl_runtime_16.1.2_x64_setup.msi http://registrationcenter-download.intel.com/akdlm/irc_nas/12512/opencl_runtime_16.1.2_x64_setup.msi
   $msiarglist = "/i opencl_runtime_16.1.2_x64_setup.msi /quiet /norestart /log msi.log"
   Write-Output "Installing OpenCL runtime"
@@ -68,17 +66,17 @@ elseif ($env:TASK -eq "bdist") {
   Get-ItemProperty -Path Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Khronos\OpenCL\Vendors
 
   # TEMPORARY for debugging
-  Write-Output "Interrogating OpenCL runtime"
-  curl https://ci.appveyor.com/api/projects/oblomov/clinfo/artifacts/clinfo.exe?job=platform%3a+x64 -o clinfo.exe
-  .\clinfo.exe
+  #Write-Output "Interrogating OpenCL runtime"
+  #curl https://ci.appveyor.com/api/projects/oblomov/clinfo/artifacts/clinfo.exe?job=platform%3a+x64 -o clinfo.exe
+  #.\clinfo.exe
   # /TEMPORARY
 
-  Set-Variable -Name CONFIG_HEADER -Value "$env:BUILD_SOURCESDIRECTORY/include/LightGBM/config.h"
-  (Get-Content (Get-Variable CONFIG_HEADER -valueOnly)).replace('std::string device_type = "cpu";', 'std::string device_type = "gpu";') | Set-Content (Get-Variable CONFIG_HEADER -valueOnly)
-  If (!(Select-String -Path (Get-Variable CONFIG_HEADER -valueOnly) -Pattern 'std::string device_type = "gpu";' -Quiet)) {
-    Write-Output "Rewriting config.h for GPU device type failed"
-    Exit -1
-  }
+  #Set-Variable -Name CONFIG_HEADER -Value "$env:BUILD_SOURCESDIRECTORY/include/LightGBM/config.h"
+  #(Get-Content (Get-Variable CONFIG_HEADER -valueOnly)).replace('std::string device_type = "cpu";', 'std::string device_type = "gpu";') | Set-Content (Get-Variable CONFIG_HEADER -valueOnly)
+  #If (!(Select-String -Path (Get-Variable CONFIG_HEADER -valueOnly) -Pattern 'std::string device_type = "gpu";' -Quiet)) {
+  #  Write-Output "Rewriting config.h for GPU device type failed"
+  #  Exit -1
+  #}
 
   cd $env:BUILD_SOURCESDIRECTORY/python-package
   python setup.py bdist_wheel --integrated-opencl --plat-name=win-amd64 --universal ; Check-Output $?
@@ -103,7 +101,9 @@ if (($env:TASK -eq "sdist") -or (($env:APPVEYOR -eq "true") -and ($env:TASK -eq 
 } else {
   $tests = $env:BUILD_SOURCESDIRECTORY + "/tests"
 }
+Write-Output "Running tests"
 pytest $tests ; Check-Output $?
+Write-Output "Completed tests"
 
 if (($env:TASK -eq "regular") -or (($env:APPVEYOR -eq "true") -and ($env:TASK -eq "python"))) {
   cd $env:BUILD_SOURCESDIRECTORY/examples/python-guide
