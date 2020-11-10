@@ -62,7 +62,7 @@ elseif ($env:TASK -eq "bdist") {
     exit 1
   }
   RefreshEnv
-  Write-Output "Current OpenCL drivers X:"
+  Write-Output "Current OpenCL drivers XX:"
   Get-ItemProperty -Path Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Khronos\OpenCL\Vendors
 
   # TEMPORARY for debugging
