@@ -62,14 +62,13 @@ elseif ($env:TASK -eq "bdist") {
     exit 1
   }
   RefreshEnv
-  Write-Output "Current OpenCL drivers:"
+  Write-Output "Current OpenCL drivers X:"
   Get-ItemProperty -Path Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Khronos\OpenCL\Vendors
 
   # TEMPORARY for debugging
   #Write-Output "Interrogating OpenCL runtime"
   #curl https://ci.appveyor.com/api/projects/oblomov/clinfo/artifacts/clinfo.exe?job=platform%3a+x64 -o clinfo.exe
   #.\clinfo.exe
-  # /TEMPORARY
 
   #Set-Variable -Name CONFIG_HEADER -Value "$env:BUILD_SOURCESDIRECTORY/include/LightGBM/config.h"
   #(Get-Content (Get-Variable CONFIG_HEADER -valueOnly)).replace('std::string device_type = "cpu";', 'std::string device_type = "gpu";') | Set-Content (Get-Variable CONFIG_HEADER -valueOnly)
