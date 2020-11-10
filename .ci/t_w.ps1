@@ -36,13 +36,13 @@ If (@(0,3010) -contains $return.exitcode) {
   exit 1
 }
 RefreshEnv
-Write-Output "Current OpenCL drivers:"
+Write-Output "Current OpenCL drivers Y:"
 Get-ItemProperty -Path Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Khronos\OpenCL\Vendors
 
 # TEMPORARY for debugging
-Write-Output "Interrogating OpenCL runtime"
-curl https://ci.appveyor.com/api/projects/oblomov/clinfo/artifacts/clinfo.exe?job=platform%3a+x64 -o clinfo.exe
-.\clinfo.exe
+#Write-Output "Interrogating OpenCL runtime"
+#curl https://ci.appveyor.com/api/projects/oblomov/clinfo/artifacts/clinfo.exe?job=platform%3a+x64 -o clinfo.exe
+#.\clinfo.exe
 # /TEMPORARY
 
 #Write-Output "Updating config.h"
@@ -74,4 +74,5 @@ $env:LIGHTGBM_TEST_DUAL_CPU_GPU = "1"
 
 Write-Output "Running tests"
 pytest $tests ; Check-Output $?
+Write-Output "Completed tests"
 
