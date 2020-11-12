@@ -37,8 +37,8 @@ conda activate $env:CONDA_ENV
 #  Write-Output "OpenCL install failed, aborting"
 #  exit 1
 #}
-#RefreshEnv
-Write-Output "Current OpenCL drivers Y:"
+RefreshEnv
+Write-Output "Current OpenCL drivers:"
 Get-ItemProperty -Path Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Khronos\OpenCL\Vendors
 #Start-Sleep -Seconds 10
 
