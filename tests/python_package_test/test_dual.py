@@ -14,7 +14,7 @@ class TestDual(unittest.TestCase):
       os.environ.get("LIGHTGBM_TEST_DUAL_CPU_GPU", None) is None,
       reason="Only run if appropriate env variable is set",
   )
-  def test_cpu_works():
+  def test_cpu_works(self):
       """If compiled appropriately, the same installation will support both GPU and CPU."""
       data = np.random.rand(500, 10)
       label = np.random.randint(2, size=500)
@@ -30,7 +30,7 @@ class TestDual(unittest.TestCase):
       os.environ.get("LIGHTGBM_TEST_DUAL_CPU_GPU", None) is None,
       reason="Only run if appropriate env variable is set",
   )
-  def test_gpu_works():
+  def test_gpu_works(self):
       """If compiled appropriately, the same installation will support both GPU and CPU."""
       data = np.random.rand(500, 10)
       label = np.random.randint(2, size=500)
