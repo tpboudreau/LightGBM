@@ -22,7 +22,6 @@ def test_cpu_works():
     gbm = lgb.train(param, train_data, 10, valid_sets=[validation_data])
 
 
-@pytest.mark.timeout(120)
 @pytest.mark.skipif(
     os.environ.get("LIGHTGBM_TEST_DUAL_CPU_GPU", None) is None,
     reason="Only run if appropriate env variable is set",
