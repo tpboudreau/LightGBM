@@ -45,7 +45,7 @@ def test_gpu_works():
             "num_leaves": 15,
             #"verbose": -1,
             "verbose": 1,
-            "num_threads": 1,
+            "num_threads": 0,
             "max_bin": 255,
             "device": "gpu"
         }
