@@ -30,7 +30,8 @@ class TestBasic(unittest.TestCase):
             "verbose": 1,
             "num_threads": 1,
             "max_bin": 255,
-            "gpu_use_dp": True
+            "device": "gpu"
+            #"gpu_use_dp": True
         }
         bst = lgb.Booster(params, train_data)
         bst.add_valid(valid_data, "valid_1")
