@@ -69,6 +69,7 @@ cp @(Get-ChildItem *.whl) $env:BUILD_ARTIFACTSTAGINGDIRECTORY
 
 #$tests = $env:BUILD_SOURCESDIRECTORY + "/tests/python_package_test"
 $tests = $env:BUILD_SOURCESDIRECTORY + "/tests"
+$dual = $env:BUILD_SOURCESDIRECTORY + "/tests/python_package_test/dual.py"
 # Make sure we can do both CPU and GPU; see tests/python_package_test/test_dual.py
 $env:LIGHTGBM_TEST_DUAL_CPU_GPU = "1"
 
@@ -77,6 +78,7 @@ $env:LIGHTGBM_TEST_DUAL_CPU_GPU = "1"
 #}
 
 Write-Output "Running tests"
+python $dual
 pytest $tests ; Check-Output $?
 #pytest --timeout=300 $tests ; Check-Output $?
 Write-Output "Completed tests"
