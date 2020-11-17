@@ -33,23 +33,12 @@ def test_gpu_works():
     validation_data = train_data = lgb.Dataset(data, label=label)
 
     try:
+        param = {"num_leaves": 31, "objective": "binary", "device": "gpu"}
         #param = {"num_leaves": 31, "objective": "binary", "device": "gpu", 'gpu_use_dp': True}
-        #param = {"num_leaves": 31, "objective": "binary", "device": "gpu"}
-        param = {
-            "objective": "binary",
-            "metric": "auc",
-            "min_data": 10,
-            "num_leaves": 15,
-            #"verbose": -1,
-            "verbose": 1,
-            "num_threads": 0,
-            "max_bin": 255,
-            "device": "gpu"
-        }
-        #gbm = lgb.train(param, train_data, 10, valid_sets=[validation_data])
+        #param = { "objective": "binary", "metric": "auc", "min_data": 10, "num_leaves": 15, #"verbose": -1, "verbose": 1, "num_threads": 0, "max_bin": 255, "device": "gpu" }
+        gbm = lgb.train(param, train_data, 10, valid_sets=[validation_data])
         #gbm = lgb.train(param, train_data, 10)
         #gbm = lgb.Booster(param, train_data)
-        pass
     except LightGBMError as e:
         if str(e) == "No OpenCL device found":
             # This is fine, it means there's no OpenCL device available,
