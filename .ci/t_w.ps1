@@ -78,7 +78,7 @@ $env:LIGHTGBM_TEST_DUAL_CPU_GPU = "1"
 #}
 
 Write-Output "Running tests"
-python $dual
+#python $dual
 pytest $tests ; Check-Output $?
 #pytest --timeout=300 $tests ; Check-Output $?
 Write-Output "Completed tests"
