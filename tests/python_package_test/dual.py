@@ -21,25 +21,30 @@ def test_cpu_works():
 def test_gpu_works():
     """If compiled appropriately, the same installation will support both GPU and CPU."""
     print('DUAL: GPU')
+    TEST_DUAL_MODE = os.getenv('LIGHTGBM_TEST_DUAL_CPU_GPU')
+    print('MODE ' + TEST_DUAL_MODE)
+
     data = np.random.rand(500, 10)
     label = np.random.randint(2, size=500)
     validation_data = train_data = lgb.Dataset(data, label=label)
+    param = {"num_leaves": 31, "objective": "binary", "device": "gpu"}
 
-    try:
-        param = {"num_leaves": 31, "objective": "binary", "device": "gpu"}
-        #param = {"num_leaves": 31, "objective": "binary", "device": "gpu", 'gpu_use_dp': True}
-        #param = { "objective": "binary", "metric": "auc", "min_data": 10, "num_leaves": 15, #"verbose": -1, "verbose": 1, "num_threads": 0, "max_bin": 255, "device": "gpu" }
-        gbm = lgb.train(param, train_data, 10, valid_sets=[validation_data])
-        #gbm = lgb.train(param, train_data, 10)
-        #gbm = lgb.Booster(param, train_data)
-    except LightGBMError as e:
-        if str(e) == "No OpenCL device found":
-            # This is fine, it means there's no OpenCL device available,
-            # and OpenCL device is only searched for if we successfully
-            # loaded OpenCL GPU backend.
-            pass
+    if TEST_DUAL_MODE == "1": # we do NOT expect OpenCL to be installed, so we expect train('gpu') to fail ...
+        try:
+            print('DUAL: try')
+            gbm = lgb.train(param, train_data, 10, valid_sets=[validation_data])
+        except LightGBMError as e:
+            if str(e) == "No OpenCL device found": # ... with this message
+                print('DUAL: pass')
+                pass
+            else:
+                print('DUAL: raise 1')
+                raise
         else:
+            print('DUAL: raise 2')
             raise
+    else: # MODE must be "2", we expect OpenCL to be installed and train('gpu') to run successfully
+        gbm = lgb.train(param, train_data, 10, valid_sets=[validation_data])
 
 
 if __name__ == "__main__":
