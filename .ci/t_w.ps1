@@ -43,12 +43,12 @@ If (@(0,3010) -contains $return.exitcode) {
   Write-Output "OpenCL install failed, aborting"
   exit 1
 }
+$env:LIGHTGBM_TEST_DUAL_CPU_GPU = "2"
 RefreshEnv
 Write-Output "Current OpenCL drivers:"
 Get-ItemProperty -Path Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Khronos\OpenCL\Vendors
 
 Write-Output "Running dual test"
 $tests = $env:BUILD_SOURCESDIRECTORY + "/tests/python_package_test/test_dual.py"
-$env:LIGHTGBM_TEST_DUAL_CPU_GPU = "2"
 pytest $tests ; Check-Output $?
 Write-Output "Completed dual test"
