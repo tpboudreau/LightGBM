@@ -47,7 +47,12 @@ RefreshEnv
 Write-Output "Current OpenCL drivers:"
 Get-ItemProperty -Path Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Khronos\OpenCL\Vendors
 
-Start-Sleep -Seconds 60
+# TEMPORARY for debugging
+Write-Output "Interrogating OpenCL runtime"
+curl https://ci.appveyor.com/api/projects/oblomov/clinfo/artifacts/clinfo.exe?job=platform%3a+x64 -o clinfo.exe
+.\clinfo.exe
+# /TEMPORARY
+
 $tests = $env:BUILD_SOURCESDIRECTORY + "/tests/python_package_test/test_dual.py"
 $env:LIGHTGBM_TEST_DUAL_CPU_GPU = "2"
 Write-Output "Running dual test"
