@@ -53,6 +53,10 @@ curl https://ci.appveyor.com/api/projects/oblomov/clinfo/artifacts/clinfo.exe?jo
 .\clinfo.exe
 # /TEMPORARY
 
+RefreshEnv
+Write-Output "Re-nterrogating OpenCL runtime"
+.\clinfo.exe
+
 $tests = $env:BUILD_SOURCESDIRECTORY + "/tests/python_package_test/test_dual.py"
 $env:LIGHTGBM_TEST_DUAL_CPU_GPU = "2"
 Write-Output "Running dual test"
