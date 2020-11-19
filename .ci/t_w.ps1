@@ -29,6 +29,8 @@ pytest $tests ; Check-Output $?
 Write-Output "Completed tests"
 
 # Install the Intel CPU runtime, so we can run tests against OpenCL
+conda deactivate
+
 Write-Output "Downloading OpenCL runtime"
 curl -o opencl_runtime_18.1_x64_setup.msi http://registrationcenter-download.intel.com/akdlm/irc_nas/vcp/13794/opencl_runtime_18.1_x64_setup.msi
 $msiarglist = "/i opencl_runtime_18.1_x64_setup.msi /quiet /norestart /log msi.log"
@@ -43,6 +45,7 @@ If (@(0,3010) -contains $return.exitcode) {
   Write-Output "OpenCL install failed, aborting"
   exit 1
 }
+
 RefreshEnv
 Write-Output "Current OpenCL drivers:"
 Get-ItemProperty -Path Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Khronos\OpenCL\Vendors
@@ -53,12 +56,9 @@ curl https://ci.appveyor.com/api/projects/oblomov/clinfo/artifacts/clinfo.exe?jo
 .\clinfo.exe
 # /TEMPORARY
 
-RefreshEnv
-Write-Output "Re-nterrogating OpenCL runtime"
-.\clinfo.exe
-
+Write-Output "Running dual test"
+conda activate $env:CONDA_ENV
 $tests = $env:BUILD_SOURCESDIRECTORY + "/tests/python_package_test/test_dual.py"
 $env:LIGHTGBM_TEST_DUAL_CPU_GPU = "2"
-Write-Output "Running dual test"
 pytest $tests ; Check-Output $?
 Write-Output "Completed dual test"
