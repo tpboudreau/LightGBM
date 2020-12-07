@@ -16,24 +16,6 @@ Get-WmiObject -Class Win32_BIOS
 Get-WmiObject -Class Win32_Processor
 #Get-WmiObject -Class Win32_ComputerSystemProcessor
 
-# setup for Python
-Write-Output "Setting up conda environment"
-conda init powershell
-conda activate
-conda config --set always_yes yes --set changeps1 no
-conda update -q -y conda
-conda create -q -y -n $env:CONDA_ENV python=$env:PYTHON_VERSION joblib matplotlib numpy pandas psutil pytest pytest-timeout python-graphviz scikit-learn scipy ; Check-Output $?
-conda activate $env:CONDA_ENV
-
-Write-Output "Building and installing wheel"
-cd $env:BUILD_SOURCESDIRECTORY/python-package
-python setup.py bdist_wheel --integrated-opencl --plat-name=win-amd64 --universal ; Check-Output $?
-cd dist; pip install --user @(Get-ChildItem *.whl) ; Check-Output $?
-cp @(Get-ChildItem *.whl) $env:BUILD_ARTIFACTSTAGINGDIRECTORY
-
-#conda deactivate
-#conda activate $env:CONDA_ENV
-
 # Install the Intel CPU runtime, so we can run tests against OpenCL
 Write-Output "Downloading OpenCL runtime"
 curl -o opencl_runtime_18.1_x64_setup.msi http://registrationcenter-download.intel.com/akdlm/irc_nas/vcp/13794/opencl_runtime_18.1_x64_setup.msi
@@ -58,6 +40,21 @@ Get-ItemProperty -Path Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Khronos\OpenCL\Vend
 Write-Output "Interrogating OpenCL runtime"
 curl https://ci.appveyor.com/api/projects/oblomov/clinfo/artifacts/clinfo.exe?job=platform%3a+x64 -o clinfo.exe
 .\clinfo.exe
+
+# setup for Python
+Write-Output "Setting up conda environment"
+conda init powershell
+conda activate
+conda config --set always_yes yes --set changeps1 no
+conda update -q -y conda
+conda create -q -y -n $env:CONDA_ENV python=$env:PYTHON_VERSION joblib matplotlib numpy pandas psutil pytest pytest-timeout python-graphviz scikit-learn scipy ; Check-Output $?
+conda activate $env:CONDA_ENV
+
+Write-Output "Building and installing wheel"
+cd $env:BUILD_SOURCESDIRECTORY/python-package
+python setup.py bdist_wheel --integrated-opencl --plat-name=win-amd64 --universal ; Check-Output $?
+cd dist; pip install --user @(Get-ChildItem *.whl) ; Check-Output $?
+cp @(Get-ChildItem *.whl) $env:BUILD_ARTIFACTSTAGINGDIRECTORY
 
 $tests = $env:BUILD_SOURCESDIRECTORY + "/tests"
 $env:LIGHTGBM_TEST_DUAL_CPU_GPU = "1"
