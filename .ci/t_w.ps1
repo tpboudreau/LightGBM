@@ -7,6 +7,15 @@ function Check-Output {
   }
 }
 
+Write-Output "OS Platform information:"
+Get-ComputerInfo
+
+Write-Output "HW Platform information:"
+Get-WmiObject -Class Win32_ComputerSystem
+Get-WmiObject -Class Win32_BIOS
+Get-WmiObject -Class Win32_Processor
+#Get-WmiObject -Class Win32_ComputerSystemProcessor
+
 # setup for Python
 Write-Output "Setting up conda environment"
 conda init powershell
@@ -27,10 +36,10 @@ cp @(Get-ChildItem *.whl) $env:BUILD_ARTIFACTSTAGINGDIRECTORY
 
 # Install the Intel CPU runtime, so we can run tests against OpenCL
 Write-Output "Downloading OpenCL runtime"
-#curl -o opencl_runtime_18.1_x64_setup.msi http://registrationcenter-download.intel.com/akdlm/irc_nas/vcp/13794/opencl_runtime_18.1_x64_setup.msi
-#$msiarglist = "/i opencl_runtime_18.1_x64_setup.msi /quiet /norestart /log msi.log"
-curl -o opencl_runtime_16.1.2_x64_setup.msi http://registrationcenter-download.intel.com/akdlm/irc_nas/12512/opencl_runtime_16.1.2_x64_setup.msi
-$msiarglist = "/i opencl_runtime_16.1.2_x64_setup.msi /quiet /norestart /log msi.log"
+curl -o opencl_runtime_18.1_x64_setup.msi http://registrationcenter-download.intel.com/akdlm/irc_nas/vcp/13794/opencl_runtime_18.1_x64_setup.msi
+$msiarglist = "/i opencl_runtime_18.1_x64_setup.msi /quiet /norestart /log msi.log"
+#curl -o opencl_runtime_16.1.2_x64_setup.msi http://registrationcenter-download.intel.com/akdlm/irc_nas/12512/opencl_runtime_16.1.2_x64_setup.msi
+#$msiarglist = "/i opencl_runtime_16.1.2_x64_setup.msi /quiet /norestart /log msi.log"
 
 Write-Output "Installing OpenCL runtime"
 $return = Start-Process msiexec -ArgumentList $msiarglist -Wait -passthru
@@ -46,11 +55,9 @@ RefreshEnv
 Write-Output "Current OpenCL drivers:"
 Get-ItemProperty -Path Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Khronos\OpenCL\Vendors
 
-# TEMPORARY for debugging
 Write-Output "Interrogating OpenCL runtime"
 curl https://ci.appveyor.com/api/projects/oblomov/clinfo/artifacts/clinfo.exe?job=platform%3a+x64 -o clinfo.exe
 .\clinfo.exe
-# /TEMPORARY
 
 $tests = $env:BUILD_SOURCESDIRECTORY + "/tests"
 $env:LIGHTGBM_TEST_DUAL_CPU_GPU = "1"
