@@ -1,11 +1,3 @@
-function Check-Output {
-  param( [bool]$success )
-  if (!$success) {
-    Write-Output "Setting EXIT"
-    $host.SetShouldExit(-1)
-    Exit -1
-  }
-}
 
 Write-Output "OS Platform information:"
 Get-ComputerInfo
@@ -18,10 +10,10 @@ Get-WmiObject -Class Win32_Processor
 
 # Install the Intel CPU runtime, so we can run tests against OpenCL
 Write-Output "Downloading OpenCL runtime"
-curl -o opencl_runtime_18.1_x64_setup.msi http://registrationcenter-download.intel.com/akdlm/irc_nas/vcp/13794/opencl_runtime_18.1_x64_setup.msi
-$msiarglist = "/i opencl_runtime_18.1_x64_setup.msi /quiet /norestart /log msi.log"
-#curl -o opencl_runtime_16.1.2_x64_setup.msi http://registrationcenter-download.intel.com/akdlm/irc_nas/12512/opencl_runtime_16.1.2_x64_setup.msi
-#$msiarglist = "/i opencl_runtime_16.1.2_x64_setup.msi /quiet /norestart /log msi.log"
+#curl -o opencl_runtime_18.1_x64_setup.msi http://registrationcenter-download.intel.com/akdlm/irc_nas/vcp/13794/opencl_runtime_18.1_x64_setup.msi
+#$msiarglist = "/i opencl_runtime_18.1_x64_setup.msi /quiet /norestart /log msi.log"
+curl -o opencl_runtime_16.1.2_x64_setup.msi http://registrationcenter-download.intel.com/akdlm/irc_nas/12512/opencl_runtime_16.1.2_x64_setup.msi
+$msiarglist = "/i opencl_runtime_16.1.2_x64_setup.msi /quiet /norestart /log msi.log"
 
 Write-Output "Installing OpenCL runtime"
 $return = Start-Process msiexec -ArgumentList $msiarglist -Wait -passthru
@@ -40,6 +32,17 @@ Get-ItemProperty -Path Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Khronos\OpenCL\Vend
 Write-Output "Interrogating OpenCL runtime"
 curl https://ci.appveyor.com/api/projects/oblomov/clinfo/artifacts/clinfo.exe?job=platform%3a+x64 -o clinfo.exe
 .\clinfo.exe
+
+# -------------------------------------
+
+function Check-Output {
+  param( [bool]$success )
+  if (!$success) {
+    Write-Output "Setting EXIT"
+    $host.SetShouldExit(-1)
+    Exit -1
+  }
+}
 
 # setup for Python
 Write-Output "Setting up conda environment"
@@ -63,3 +66,4 @@ pytest $tests ; Check-Output $?
 Write-Output "Completed tests"
 
 conda deactivate
+
