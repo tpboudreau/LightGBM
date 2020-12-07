@@ -103,14 +103,10 @@ def clear_path(path):
 
 def silent_call(cmd, raise_error=False, error_msg=''):
     try:
-        output = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
         with open(LOG_PATH, "ab") as log:
-            log.write(output)
+            subprocess.check_call(cmd, stderr=log, stdout=log)
         return 0
     except Exception as err:
-        if isinstance(err, subprocess.CalledProcessError):
-            with open(LOG_PATH, "ab") as log:
-                log.write(err.output)
         if raise_error:
             raise Exception("\n".join((error_msg, LOG_NOTICE)))
         return 1
@@ -187,7 +183,7 @@ def compile_cpp(use_mingw=False, use_gpu=False, use_cuda=False, use_mpi=False,
                 arch = "Win32" if bit32 else "x64"
                 vs_versions = ("Visual Studio 16 2019", "Visual Studio 15 2017", "Visual Studio 14 2015")
                 for vs in vs_versions:
-                    logger.info("Starting to compile with %s." % vs)
+                    logger.info("Starting to compile with %s (%s).", vs, arch)
                     status = silent_call(cmake_cmd + ["-G", vs, "-A", arch])
                     if status == 0:
                         break
@@ -320,6 +316,26 @@ class CustomSdist(sdist):
             os.remove(os.path.join(CURRENT_DIR, '_IS_SOURCE_PACKAGE.txt'))
 
 
+class CustomBdistWheel(bdist_wheel):
+    """Supports --integrated-opencl to allow building OpenCL wheels on Windows.
+
+    Other install options should be added over time when needed.
+    """
+
+    user_options = bdist_wheel.user_options + [
+        ('integrated-opencl', None, 'Compile integrated OpenCL version'),
+    ]
+
+    def initialize_options(self):
+        bdist_wheel.initialize_options(self)
+        self.integrated_opencl = False
+
+    def run(self):
+        install = self.distribution.get_command_obj('install')
+        install.integrated_opencl = self.integrated_opencl
+        bdist_wheel.run(self)
+
+
 if __name__ == "__main__":
     CURRENT_DIR = os.path.abspath(os.path.dirname(__file__))
     LOG_PATH = os.path.join(os.path.expanduser('~'), 'LightGBM_compilation.log')
@@ -354,6 +370,7 @@ if __name__ == "__main__":
               'install_lib': CustomInstallLib,
               'bdist_wheel': CustomBdistWheel,
               'sdist': CustomSdist,
+              'bdist_wheel': CustomBdistWheel,
           },
           packages=find_packages(),
           include_package_data=True,
