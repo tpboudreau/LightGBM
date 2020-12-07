@@ -11,7 +11,8 @@ jobs:
 - job: Windows
 ###########################################
   pool:
-    vmImage: 'vs2017-win2016'
+    #    vmImage: 'vs2017-win2016'
+    vmImage: 'windows-latest'
   steps:
   - powershell: |
       Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
