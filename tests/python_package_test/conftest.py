@@ -4,5 +4,5 @@ import signal
 
 @pytest.marker.trylast
 def pytest_unconfigure():
-    print("Forcing test shutdown")
+    print("Forcing pytest shutdown")
     os.kill(os.getpid(), signal.SIGTERM)
