@@ -30,7 +30,8 @@ cp @(Get-ChildItem *.whl) $env:BUILD_ARTIFACTSTAGINGDIRECTORY
 $tests = $env:BUILD_SOURCESDIRECTORY + "/tests"
 $env:LIGHTGBM_TEST_DUAL_CPU_GPU = "1"
 Write-Output "Running tests"
-pytest $tests ; Check-Output $?
+#pytest $tests ; Check-Output $?
+python $tests/python-package-test/dual.py ; Check-Output $?
 Write-Output "Completed tests"
 
 conda deactivate
