@@ -1,8 +1,8 @@
 
 Write-Output "HW Platform information:"
 Get-WmiObject -Class Win32_ComputerSystem
-Get-WmiObject -Class Win32_BIOS
 Get-WmiObject -Class Win32_Processor
+Get-WmiObject -Class Win32_BIOS
 
 # Install the Intel CPU runtime, so we can run tests against OpenCL
 Write-Output "Downloading OpenCL runtime"

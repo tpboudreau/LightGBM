@@ -23,19 +23,22 @@ conda activate $env:CONDA_ENV
 
 Write-Output "Building and installing wheel"
 cd $env:BUILD_SOURCESDIRECTORY/python-package
-#python setup.py bdist_wheel --integrated-opencl --plat-name=win-amd64 --universal ; Check-Output $?
-python setup.py bdist_wheel --gpu --plat-name=win-amd64 --universal ; Check-Output $?
+python setup.py bdist_wheel --integrated-opencl --plat-name=win-amd64 --universal ; Check-Output $?
 cd dist; pip install --user @(Get-ChildItem *.whl) ; Check-Output $?
 cp @(Get-ChildItem *.whl) $env:BUILD_ARTIFACTSTAGINGDIRECTORY
 
-Write-Output "Running tests"
-#$tests = $env:BUILD_SOURCESDIRECTORY + "/tests"
-#$env:LIGHTGBM_TEST_DUAL_CPU_GPU = "1"
+Write-Output "Running module"
 cd $env:BUILD_SOURCESDIRECTORY/tests/python_package_test
 python test_dual.py ; Check-Output $?
-#pytest test_dual.py ; Check-Output $?
+Write-Output "Completed module"
+
+#Write-Output "Running tests"
+#$tests = $env:BUILD_SOURCESDIRECTORY + "/tests"
+#$env:LIGHTGBM_TEST_DUAL_CPU_GPU = "1"
+##cd $env:BUILD_SOURCESDIRECTORY/tests/python_package_test
+##pytest test_dual.py ; Check-Output $?
 #pytest $tests ; Check-Output $?
-Write-Output "Completed tests"
+#Write-Output "Completed tests"
 
 conda deactivate
 
