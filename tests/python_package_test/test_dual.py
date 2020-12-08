@@ -56,4 +56,4 @@ if __name__ == "__main__":
         sys.exit(-1)
 
     print('exit(0)')
-    sys.exit(0)
+    #sys.exit(0)
