@@ -36,6 +36,19 @@ def test_gpu_works():
     lgb.train(param, train_data, 10, valid_sets=[validation_data])
 
 
-if __name == "__main__":
-    test_cpu_works()
-    test_gpu_works()
+if __name__ == "__main__":
+    try:
+        test_cpu_works()
+    except Exception as e:
+        print('CPU run FAILED')
+        sys.exit(-1)
+        print(e)
+
+    try:
+        test_gpu_works()
+    except Exception as e:
+        print('GPU run FAILED')
+        print(e)
+        sys.exit(-1)
+
+    sys.exit(0)
