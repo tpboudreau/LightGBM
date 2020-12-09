@@ -20,7 +20,7 @@ Write-Output "Installing OpenCL runtime"
 #  Write-Output "OpenCL install failed, aborting"
 #  exit 1
 #}
-.\opencl_runtime_2021.1.1.191.exe
+start-process .\opencl_runtime_2021.1.1.191.exe -Argumentlist "/a"
 
 RefreshEnv
 Write-Output "Current OpenCL drivers:"
