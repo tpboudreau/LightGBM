@@ -3,8 +3,8 @@ function Check-Output {
   param( [bool]$success )
   if (!$success) {
     Write-Output "Setting EXIT"
-    #$host.SetShouldExit(-1)
-    #Exit -1
+    $host.SetShouldExit(-1)
+    Exit -1
   } else {
     Write-Output "Setting SUCCESS"
   }
