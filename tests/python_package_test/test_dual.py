@@ -32,5 +32,5 @@ def test_gpu_works():
     label = np.random.randint(2, size=500)
     validation_data = train_data = lgb.Dataset(data, label=label)
 
-    param = {"num_leaves": 31, "objective": "binary", "device": "gpu"}
-    gbm = lgb.train(param, train_data, 10, valid_sets=[validation_data])
+    #param = {"num_leaves": 31, "objective": "binary", "device": "gpu"}
+    #gbm = lgb.train(param, train_data, 10, valid_sets=[validation_data])
