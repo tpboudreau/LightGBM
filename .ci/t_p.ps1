@@ -3,8 +3,10 @@ function Check-Output {
   param( [bool]$success )
   if (!$success) {
     Write-Output "Setting EXIT"
-    $host.SetShouldExit(-1)
-    Exit -1
+    #$host.SetShouldExit(-1)
+    #Exit -1
+  } else {
+    Write-Output "Setting SUCCESS"
   }
 }
 
@@ -26,16 +28,17 @@ python setup.py bdist_wheel --integrated-opencl --plat-name=win-amd64 --universa
 cd dist; pip install --user @(Get-ChildItem *.whl) ; Check-Output $?
 cp @(Get-ChildItem *.whl) $env:BUILD_ARTIFACTSTAGINGDIRECTORY
 
-#Write-Output "Running module"
-#cd $env:BUILD_SOURCESDIRECTORY/tests/python_package_test
+Write-Output "Running module"
+cd $env:BUILD_SOURCESDIRECTORY/tests/python_package_test
 #python test_dual.py ; Check-Output $?
-#Write-Output "Completed module"
+python -m trace --trace td.py ; Check-Output $?
+Write-Output "Completed module"
 
-Write-Output "Running tests"
-$tests = $env:BUILD_SOURCESDIRECTORY + "/tests"
-$env:LIGHTGBM_TEST_DUAL_CPU_GPU = "1"
-pytest $tests ; Check-Output $?
-Write-Output "Completed tests"
+#Write-Output "Running tests"
+#$tests = $env:BUILD_SOURCESDIRECTORY + "/tests"
+#$env:LIGHTGBM_TEST_DUAL_CPU_GPU = "1"
+#pytest $tests ; Check-Output $?
+#Write-Output "Completed tests"
 
 conda deactivate
 

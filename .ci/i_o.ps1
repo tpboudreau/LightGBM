@@ -12,8 +12,8 @@ curl -o w_opencl_runtime_p_2021.1.1.191.exe https://registrationcenter-download.
 #$msiarglist = "/i opencl_runtime_16.1.2_x64_setup.msi /quiet /norestart /log msi.log"
 
 Write-Output "Installing OpenCL runtime"
-#$return = Start-Process msiexec -ArgumentList $msiarglist -Wait -passthru
 Invoke-Command -ScriptBlock {Start-Process ".\w_opencl_runtime_p_2021.1.1.191.exe" -ArgumentList "-s -l opencl_runtime.log -a /n /quiet /norestart /passive" -Wait}
+#$return = Start-Process msiexec -ArgumentList $msiarglist -Wait -passthru
 #Get-Content msi.log
 #If (@(0,3010) -contains $return.exitcode) {
 #  Write-Output "OpenCL install successful"
