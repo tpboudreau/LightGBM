@@ -34,8 +34,6 @@ cp @(Get-ChildItem *.whl) $env:BUILD_ARTIFACTSTAGINGDIRECTORY
 Write-Output "Running tests"
 $tests = $env:BUILD_SOURCESDIRECTORY + "/tests"
 $env:LIGHTGBM_TEST_DUAL_CPU_GPU = "1"
-##cd $env:BUILD_SOURCESDIRECTORY/tests/python_package_test
-##pytest test_dual.py ; Check-Output $?
 pytest $tests ; Check-Output $?
 Write-Output "Completed tests"
 

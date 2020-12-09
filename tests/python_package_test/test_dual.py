@@ -1,7 +1,6 @@
 """Tests for dual GPU+CPU support."""
 
 import os
-#import sys
 import pytest
 
 import lightgbm as lgb
@@ -35,25 +34,3 @@ def test_gpu_works():
 
     param = {"num_leaves": 31, "objective": "binary", "device": "gpu"}
     gbm = lgb.train(param, train_data, 10, valid_sets=[validation_data])
-
-
-#if __name__ == "__main__":
-#    print('main()')
-#    try:
-#        print('CPU ...')
-#        test_cpu_works()
-#    except Exception as e:
-#        print('CPU run FAILED')
-#        print(e)
-#        sys.exit(-1)
-#
-#    try:
-#        print('GPU ...')
-#        test_gpu_works()
-#    except Exception as e:
-#        print('GPU run FAILED')
-#        print(e)
-#        sys.exit(-1)
-#
-#    print('[exit(0)]')
-#    #sys.exit(0)
