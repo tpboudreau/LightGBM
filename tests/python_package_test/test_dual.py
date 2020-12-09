@@ -47,13 +47,13 @@ if __name__ == "__main__":
         print(e)
         sys.exit(-1)
 
-    #try:
-    #    print('GPU ...')
-    #    test_gpu_works()
-    #except Exception as e:
-    #    print('GPU run FAILED')
-    #    print(e)
-    #    sys.exit(-1)
+    try:
+        print('GPU ...')
+        test_gpu_works()
+    except Exception as e:
+        print('GPU run FAILED')
+        print(e)
+        sys.exit(-1)
 
     print('[exit(0)]')
     #sys.exit(0)
