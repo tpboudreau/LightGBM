@@ -17,24 +17,14 @@ jobs:
       Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
       Write-Host "##vso[task.setvariable variable=AZURE]true"
     displayName: 'Set Variables'
-  #- script: |
-      #cmd /c "powershell -ExecutionPolicy Bypass -File %BUILD_SOURCESDIRECTORY%/.ci/i_o.ps1"
-    #displayName: 'Install OpenCL'
-  - powershell: |
-      Write-Output "HW Platform information:"
-      Get-WmiObject -Class Win32_ComputerSystem
-      Get-WmiObject -Class Win32_Processor
-      Get-WmiObject -Class Win32_BIOS
-      Write-Output "Downloading OpenCL runtime"
-      curl -o AMD-APP-SDKInstaller-v3.0.130.135-GA-windows-F-x64.exe http://amd-dev.wpengine.netdna-cdn.com/app-sdk/installers/APPSDKInstaller/3.0.130.135-GA/full/AMD-APP-SDKInstaller-v3.0.130.135-GA-windows-F-x64.exe
-      Write-Output "Installing OpenCL runtime"
-      Invoke-Command -ScriptBlock {Start-Process ".\AMD-APP-SDKInstaller-v3.0.130.135-GA-windows-F-x64.exe" -ArgumentList '/S /V"/quiet /norestart /passive /log amd_opencl_sdk.log"' -Wait}
-      RefreshEnv
-      Write-Output "Current OpenCL drivers:"
-      Get-ItemProperty -Path Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Khronos\OpenCL\Vendors
+  - script: |
+      cmd /c "powershell -ExecutionPolicy Bypass -File %BUILD_SOURCESDIRECTORY%/.ci/i_o.ps1"
     displayName: 'Install OpenCL'
+  - powershell: |
+      Restart-Computer -Wait
+    displayName: 'Restart'
   - script: |
       cmd /c "conda init powershell"
       cmd /c "powershell -ExecutionPolicy Bypass -File %BUILD_SOURCESDIRECTORY%/.ci/t_p.ps1"
-    displayName: Test
+    displayName: 'Test'
 

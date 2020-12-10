@@ -10,12 +10,12 @@ function Check-Output {
   }
 }
 
-RefreshEnv
+#RefreshEnv
 Write-Output "Current OpenCL drivers:"
 Get-ItemProperty -Path Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Khronos\OpenCL\Vendors
 
-#curl https://ci.appveyor.com/api/projects/oblomov/clinfo/artifacts/clinfo.exe?job=platform%3a+x64 -o clinfo.exe
-#.\clinfo.exe
+curl https://ci.appveyor.com/api/projects/oblomov/clinfo/artifacts/clinfo.exe?job=platform%3a+x64 -o clinfo.exe
+.\clinfo.exe
 
 Write-Output "Setting up conda environment"
 conda init powershell
