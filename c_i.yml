@@ -21,7 +21,7 @@ jobs:
       cmd /c "powershell -ExecutionPolicy Bypass -File %BUILD_SOURCESDIRECTORY%/.ci/i_o.ps1"
     displayName: 'Install OpenCL'
   - powershell: |
-      Restart-Computer -Wait
+      Restart-Computer
     displayName: 'Restart'
   - script: |
       cmd /c "conda init powershell"

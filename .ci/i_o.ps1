@@ -24,7 +24,7 @@ Invoke-Command -ScriptBlock {Start-Process ".\AMD-APP-SDKInstaller-v3.0.130.135-
 #  exit 1
 #}
 
-#RefreshEnv
-#Write-Output "Current OpenCL drivers:"
-#Get-ItemProperty -Path Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Khronos\OpenCL\Vendors
+RefreshEnv
+Write-Output "Current OpenCL drivers:"
+Get-ItemProperty -Path Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Khronos\OpenCL\Vendors
 
