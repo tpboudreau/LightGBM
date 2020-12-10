@@ -1,7 +1,7 @@
 trigger:
   branches:
     include:
-    - t3-mirror 
+    - t3-mirror-2
 variables:
   PYTHON_VERSION: 3.8
   CONDA_ENV: test-env
