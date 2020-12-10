@@ -18,7 +18,7 @@ def test_cpu_works():
     label = np.random.randint(2, size=500)
     validation_data = train_data = lgb.Dataset(data, label=label)
 
-    param = {"num_leaves": 31, "objective": "binary", "device": "cpu"}
+    param = {"verbosity": 2, "num_leaves": 31, "objective": "binary", "device": "cpu"}
     gbm = lgb.train(param, train_data, 10, valid_sets=[validation_data])
 
 
@@ -32,5 +32,5 @@ def test_gpu_works():
     label = np.random.randint(2, size=500)
     validation_data = train_data = lgb.Dataset(data, label=label)
 
-    param = {"num_leaves": 31, "objective": "binary", "device": "gpu"}
+    param = {"verbosity": 2, "num_leaves": 31, "objective": "binary", "device": "gpu"}
     gbm = lgb.train(param, train_data, 10, valid_sets=[validation_data])
