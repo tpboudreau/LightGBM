@@ -10,8 +10,14 @@ function Check-Output {
   }
 }
 
-Write-Output "Interrogating OpenCL runtime"
+RefreshEnv
+Write-Output "Current OpenCL drivers:"
+Get-ItemProperty -Path Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Khronos\OpenCL\Vendors
+
+Write-Output "Downloading clinfo.exe"
 curl https://ci.appveyor.com/api/projects/oblomov/clinfo/artifacts/clinfo.exe?job=platform%3a+x64 -o clinfo.exe
+dir
+Write-Output "Running clinfo.exe"
 .\clinfo.exe
 
 Write-Output "Setting up conda environment"
