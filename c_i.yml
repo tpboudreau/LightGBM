@@ -17,6 +17,8 @@ jobs:
       Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
       Write-Host "##vso[task.setvariable variable=AZURE]true"
     displayName: 'Set Variables'
+  - powershell: |
+      (Get-Host).Version
   - script: |
       cmd /c "powershell -ExecutionPolicy Bypass -File %BUILD_SOURCESDIRECTORY%/.ci/i_o.ps1"
     displayName: 'Install OpenCL'
