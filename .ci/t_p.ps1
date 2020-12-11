@@ -10,7 +10,7 @@ function Check-Output {
   }
 }
 
-. .\u_s.ps1
+. $env:BUILD_SOURCESDIRECTORY/.ci/u_s.ps1
 Update-SessionEnvironment
 
 Write-Output "Current OpenCL drivers:"
