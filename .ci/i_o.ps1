@@ -22,7 +22,7 @@ Write-Output "Downloading OpenCL runtime"
 $parts = @("1", "2", "3", "4", "EXE")
 foreach ($p in $parts) {
   Write-Output " - downloading part $($p)"
-  Invoke-WebRequest -OutFile AMD-APP-SDKInstaller-v3.0.130.135-GA-windows-F-x64.exe.$p -Uri https://gamma-rho.com/split/AMD-APP-SDKInstaller-v3.0.130.135-GA-windows-F-x64.exe.$p
+  Invoke-WebRequest -OutFile "AMD-APP-SDKInstaller-v3.0.130.135-GA-windows-F-x64.exe.$($p)" -Uri "https://gamma-rho.com/split/AMD-APP-SDKInstaller-v3.0.130.135-GA-windows-F-x64.exe.$($p)"
 }
 pwd
 dir
