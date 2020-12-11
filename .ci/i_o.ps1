@@ -13,7 +13,7 @@ Write-Output "Downloading OpenCL runtime"
 #Invoke-WebRequest -OutFile $installer -Uri https://gamma-rho.com/$installer
 #Invoke-WebRequest -OutFile AMD-APP-SDKInstaller-v3.0.130.135-GA-windows-F-x64.exe -Uri https://gamma-rho.com/AMD-APP-SDKInstaller-v3.0.130.135-GA-windows-F-x64.exe
 #
-Invoke-WebRequest -OutFile clinfo.exe -Uri https://gamma-rho.com/clinfo.exe
+Invoke-WebRequest -OutFile clinfo.exe -Uri https://gamma-rho.com/clinfo-windows-x64.exe
 
 #Write-Output "Installing OpenCL runtime"
 #Invoke-Command -ScriptBlock {Start-Process .\$installer -ArgumentList '/S /V"/quiet /norestart /passive /log amd_opencl_sdk.log"' -Wait}
