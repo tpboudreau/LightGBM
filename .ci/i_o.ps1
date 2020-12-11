@@ -21,14 +21,19 @@ Get-WmiObject -Class Win32_BIOS
 Write-Output "Downloading OpenCL runtime"
 $parts = @("1", "2", "3", "4", "EXE")
 foreach ($p in $parts) {
-  Write-Output " - downloading part " + $p
+  Write-Output " - downloading part $($p)"
   Invoke-WebRequest -OutFile AMD-APP-SDKInstaller-v3.0.130.135-GA-windows-F-x64.exe.$p -Uri https://gamma-rho.com/split/AMD-APP-SDKInstaller-v3.0.130.135-GA-windows-F-x64.exe.$p
 }
+pwd
+dir
 Write-Output " - combining parts"
 .\AMD-APP-SDKInstaller-v3.0.130.135-GA-windows-F-x64.exe.EXE
+Write-Output "DONE"
+pwd
+dir
 
 Write-Output "Installing OpenCL runtime"
-Invoke-Command -ScriptBlock {Start-Process 'AMD-APP-SDKInstaller-v3.0.130.135-GA-windows-F-x64.exe' -ArgumentList '/S /V"/quiet /norestart /passive /log amd_opencl_sdk.log"' -Wait}
+Invoke-Command -ScriptBlock {Start-Process '.\AMD-APP-SDKInstaller-v3.0.130.135-GA-windows-F-x64.exe' -ArgumentList '/S /V"/quiet /norestart /passive /log amd_opencl_sdk.log"' -Wait}
 
 $property = Get-ItemProperty -Path Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Khronos\OpenCL\Vendors
 if ($property -eq $null) {
@@ -40,5 +45,6 @@ if ($property -eq $null) {
   Write-Output "Successfully installed OpenCL runtime"
   Write-Output "Current OpenCL drivers:"
   Write-Output $property
+  Exit -1
 }
 
