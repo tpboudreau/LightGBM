@@ -12,7 +12,7 @@ Write-Output "Downloading OpenCL runtime"
 #curl https://gamma-rho.com/$installer --ipv4 --tlsv1.2 --output $installer
 #Invoke-WebRequest -OutFile $installer -Uri https://gamma-rho.com/$installer
 #Invoke-WebRequest -OutFile AMD-APP-SDKInstaller-v3.0.130.135-GA-windows-F-x64.exe -Uri https://gamma-rho.com/AMD-APP-SDKInstaller-v3.0.130.135-GA-windows-F-x64.exe
-#
+##
 Invoke-WebRequest -OutFile clinfo.exe -Uri https://gamma-rho.com/clinfo-windows-x64.exe
 
 #Write-Output "Installing OpenCL runtime"
