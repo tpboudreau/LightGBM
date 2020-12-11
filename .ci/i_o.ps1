@@ -24,12 +24,10 @@ foreach ($p in $parts) {
   Write-Output " - downloading part $($p)"
   Invoke-WebRequest -OutFile "AMD-APP-SDKInstaller-v3.0.130.135-GA-windows-F-x64.exe.$($p)" -Uri "https://gamma-rho.com/split/AMD-APP-SDKInstaller-v3.0.130.135-GA-windows-F-x64.exe.$($p)"
 }
-pwd
-dir
 Write-Output " - combining parts"
-.\AMD-APP-SDKInstaller-v3.0.130.135-GA-windows-F-x64.exe.EXE
+Start-Process ".\AMD-APP-SDKInstaller-v3.0.130.135-GA-windows-F-x64.exe.EXE"
+Write-Output $?
 Write-Output "DONE"
-pwd
 dir
 
 Write-Output "Installing OpenCL runtime"
