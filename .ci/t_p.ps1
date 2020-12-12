@@ -1,12 +1,4 @@
 
-Add-Content -Path "$profile" -Value @'
-$ChocolateyProfile = "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
-if (Test-Path($ChocolateyProfile)) {
-  Write-Output "IMPORTING CHOCOLATEY PROFILE"
-  Import-Module "$ChocolateyProfile"
-} else {Write-Output "UNABLE TO IMPORT PROFILE"}
-'@
-
 function Check-Output {
   param( [bool]$success )
   if (!$success) {
@@ -21,8 +13,18 @@ function Check-Output {
 #. $env:BUILD_SOURCESDIRECTORY/.ci/u_s.ps1
 #Update-SessionEnvironment
 
+Write-Output "START"
+Add-Content -Path "$profile" -Value @'
+$ChocolateyProfile = "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
+if (Test-Path($ChocolateyProfile)) {
+  Write-Output "IMPORTING CHOCOLATEY PROFILE"
+  Import-Module "$ChocolateyProfile"
+} else {Write-Output "UNABLE TO IMPORT PROFILE"}
+'@
+
 RefreshEnv
 
+Write-Output "END"
 Exit -1
 
 Write-Output "Current OpenCL drivers:"
