@@ -1,4 +1,11 @@
 
+Add-Content -Path "$profile" -Value @'
+$ChocolateyProfile = "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
+if (Test-Path($ChocolateyProfile)) {
+  Import-Module "$ChocolateyProfile"
+}
+'@
+
 function Check-Output {
   param( [bool]$success )
   if (!$success) {
@@ -10,8 +17,9 @@ function Check-Output {
   }
 }
 
-. $env:BUILD_SOURCESDIRECTORY/.ci/u_s.ps1
-Update-SessionEnvironment
+#. $env:BUILD_SOURCESDIRECTORY/.ci/u_s.ps1
+#Update-SessionEnvironment
+RefreshEnv
 
 Write-Output "Current OpenCL drivers:"
 Get-ItemProperty -Path Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Khronos\OpenCL\Vendors
