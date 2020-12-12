@@ -13,27 +13,17 @@ function Check-Output {
 #. $env:BUILD_SOURCESDIRECTORY/.ci/u_s.ps1
 #Update-SessionEnvironment
 
-Write-Output "START"
-#Add-Content -Path "$profile" -Value @'
-#$ChocolateyProfile = "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
-#if (Test-Path($ChocolateyProfile)) {
-#  Import-Module "$ChocolateyProfile"
+$module = "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
+#if (Test-Path($module)) {
+#  Import-Module "$module"
+#} else {
+#
 #}
-#'@
-
-#{Add-Content -Path "$profile" -Value @'$ChocolateyProfile = "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1" if (Test-Path($ChocolateyProfile)) { Import-Module "$ChocolateyProfile" }'@}
-
-#Write-Output "$profile"
-#Get-ChildItem "$profile"
-#Add-Content -Path "$profile" -Value '$M = "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1" ; if (Test-Path($M)) { Import-Module "$M" }'
-$M = "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
-Write-Output "A"
-if (Test-Path($M)) {
-  Write-Output "I"
-  Import-Module "$M"
-} else {
-  Write-Output "X"
-}
+#Import-Module "$module" ; Check-Output($?)
+Import-Module "$module"
+Write-Output "a"
+Write-Output $?
+Write-Output "w"
 
 RefreshEnv
 
