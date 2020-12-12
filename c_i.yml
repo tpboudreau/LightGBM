@@ -26,7 +26,7 @@ jobs:
     displayName: 'Cache OpenCL'
   - script: |
       cmd /c "powershell -ExecutionPolicy Bypass -File %BUILD_SOURCESDIRECTORY%/.ci/d_o.ps1"
-    condition: and(eq(variables.TASK, 'bdist'), condition: ne(variables.OPENCL_INSTALLER_FOUND, 'true'))
+    condition: and(eq(variables.TASK, 'bdist'), ne(variables.OPENCL_INSTALLER_FOUND, 'true'))
     displayName: 'Download OpenCL'
   - script: |
       cmd /c "powershell -ExecutionPolicy Bypass -File %BUILD_SOURCESDIRECTORY%/.ci/i_o.ps1"
