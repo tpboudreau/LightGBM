@@ -10,25 +10,10 @@ function Check-Output {
   }
 }
 
-#. $env:BUILD_SOURCESDIRECTORY/.ci/u_s.ps1
-#Update-SessionEnvironment
 
 $module = "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
-#if (Test-Path($module)) {
-#  Import-Module "$module"
-#} else {
-#
-#}
-#Import-Module "$module" ; Check-Output($?)
-Import-Module "$module"
-Write-Output "a"
-Write-Output $?
-Write-Output "w"
-
+Import-Module "$module" ; Check-Output $?
 RefreshEnv
-
-Write-Output "END"
-Exit -1
 
 Write-Output "Current OpenCL drivers:"
 Get-ItemProperty -Path Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Khronos\OpenCL\Vendors
