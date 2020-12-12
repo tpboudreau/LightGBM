@@ -21,6 +21,8 @@ Write-Output "START"
 #}
 #'@
 
+#{Add-Content -Path "$profile" -Value @'$ChocolateyProfile = "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1" if (Test-Path($ChocolateyProfile)) { Import-Module "$ChocolateyProfile" }'@}
+
 Write-Output "$profile"
 
 RefreshEnv
