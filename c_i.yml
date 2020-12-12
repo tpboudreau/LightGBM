@@ -20,9 +20,6 @@ jobs:
   - script: |
       cmd /c "powershell -ExecutionPolicy Bypass -File %BUILD_SOURCESDIRECTORY%/.ci/i_o.ps1"
     displayName: 'Install OpenCL'
-  - powershell: |
-      Add-Content -Path "$profile" -Value '$M = "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1" ; if (Test-Path($M)) { Import-Module "$M" }'
-    displayName: 'Update profile'
   - script: |
       cmd /c "conda init powershell"
       cmd /c "powershell -ExecutionPolicy Bypass -File %BUILD_SOURCESDIRECTORY%/.ci/t_p.ps1"
