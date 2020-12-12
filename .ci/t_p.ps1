@@ -14,13 +14,14 @@ function Check-Output {
 #Update-SessionEnvironment
 
 Write-Output "START"
-Add-Content -Path "$profile" -Value @'
-$ChocolateyProfile = "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
-if (Test-Path($ChocolateyProfile)) {
-  Write-Output "IMPORTING CHOCOLATEY PROFILE"
-  Import-Module "$ChocolateyProfile"
-} else {Write-Output "UNABLE TO IMPORT PROFILE"}
-'@
+#Add-Content -Path "$profile" -Value @'
+#$ChocolateyProfile = "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
+#if (Test-Path($ChocolateyProfile)) {
+#  Import-Module "$ChocolateyProfile"
+#}
+#'@
+
+Write-Output "$profile"
 
 RefreshEnv
 
