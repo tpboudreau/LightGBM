@@ -23,10 +23,17 @@ Write-Output "START"
 
 #{Add-Content -Path "$profile" -Value @'$ChocolateyProfile = "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1" if (Test-Path($ChocolateyProfile)) { Import-Module "$ChocolateyProfile" }'@}
 
-Write-Output "$profile"
-Get-ChildItem "$profile"
-Write-Output "X"
-Add-Content -Path "$profile" -Value '$M = "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1" ; if (Test-Path($M)) { Import-Module "$M" }'
+#Write-Output "$profile"
+#Get-ChildItem "$profile"
+#Add-Content -Path "$profile" -Value '$M = "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1" ; if (Test-Path($M)) { Import-Module "$M" }'
+$M = "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
+Write-Output "A"
+if (Test-Path($M)) {
+  Write-Output "I"
+  Import-Module "$M"
+} else {
+  Write-Output "X"
+}
 
 RefreshEnv
 
