@@ -10,10 +10,8 @@ function Check-Output {
   }
 }
 
-#. $env:BUILD_SOURCESDIRECTORY/.ci/u_s.ps1
-#Update-SessionEnvironment
-
-RefreshEnv
+. $env:BUILD_SOURCESDIRECTORY/.ci/u_s.ps1
+Update-SessionEnvironment
 
 Write-Output "Current OpenCL drivers:"
 Get-ItemProperty -Path Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Khronos\OpenCL\Vendors

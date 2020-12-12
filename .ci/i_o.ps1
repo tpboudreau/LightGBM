@@ -10,14 +10,14 @@ Get-WmiObject -Class Win32_BIOS
 #curl -o AMD-APP-SDKInstaller-v3.0.130.135-GA-windows-F-x64.exe http://amd-dev.wpengine.netdna-cdn.com/app-sdk/installers/APPSDKInstaller/3.0.130.135-GA/full/AMD-APP-SDKInstaller-v3.0.130.135-GA-windows-F-x64.exe
 #Invoke-WebRequest -OutFile AMD-APP-SDKInstaller-v3.0.130.135-GA-windows-F-x64.exe -Uri https://gamma-rho.com/AMD-APP-SDKInstaller-v3.0.130.135-GA-windows-F-x64.exe
 
-Write-Output "Downloading OpenCL runtime"
-$parts = @("1", "2", "3", "4", "EXE")
+Write-Output "Downloading OpenCL installer parts"
+$parts = @("1", "2", "3", "4", "5", "6", "7", "8", "9", "EXE")
 foreach ($p in $parts) {
   Write-Output " - downloading part $($p)"
-  Invoke-WebRequest -OutFile "AMD-APP-SDKInstaller-v3.0.130.135-GA-windows-F-x64.exe.$($p)" -Uri "https://gamma-rho.com/split/AMD-APP-SDKInstaller-v3.0.130.135-GA-windows-F-x64.exe.$($p)"
+  Invoke-WebRequest -OutFile "AMD-APP-SDKInstaller-v3.0.130.135-GA-windows-F-x64.exe.$($p)" -Uri "https://gamma-rho.com/parts/AMD-APP-SDKInstaller-v3.0.130.135-GA-windows-F-x64.exe.$($p)"
 }
-Write-Output " - combining parts"
-Start-Process ".\AMD-APP-SDKInstaller-v3.0.130.135-GA-windows-F-x64.exe.EXE"
+Write-Output "Combining parts"
+Start-Process ".\AMD-APP-SDKInstaller-v3.0.130.135-GA-windows-F-x64.exe.EXE" -Wait
 Start-Sleep -Seconds 10
 
 Write-Output "Installing OpenCL runtime"
