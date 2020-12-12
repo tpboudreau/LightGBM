@@ -16,11 +16,9 @@ foreach ($p in $parts) {
   Write-Output " - downloading part $($p)"
   Invoke-WebRequest -OutFile "AMD-APP-SDKInstaller-v3.0.130.135-GA-windows-F-x64.exe.$($p)" -Uri "https://gamma-rho.com/split/AMD-APP-SDKInstaller-v3.0.130.135-GA-windows-F-x64.exe.$($p)"
 }
-#Get-ChildItem .\AMD-APP-SDKInstaller-v3.0.130.135-GA-windows-F-x64.exe.EXE
 Write-Output " - combining parts"
 Start-Process ".\AMD-APP-SDKInstaller-v3.0.130.135-GA-windows-F-x64.exe.EXE"
 Start-Sleep -Seconds 10
-Get-ChildItem .\AMD-APP-SDKInstaller-v3.0.130.135-GA-windows-F-x64.exe
 
 Write-Output "Installing OpenCL runtime"
 Invoke-Command -ScriptBlock {Start-Process '.\AMD-APP-SDKInstaller-v3.0.130.135-GA-windows-F-x64.exe' -ArgumentList '/S /V"/quiet /norestart /passive /log amd_opencl_sdk.log"' -Wait}
