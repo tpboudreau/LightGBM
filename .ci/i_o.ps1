@@ -13,7 +13,7 @@ $property = Get-ItemProperty -Path Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Khronos
 if ($property -eq $null) {
   Write-Output "Unable to install OpenCL runtime"
   Write-Output "OpenCL installation log:"
-  Get-Contennt "opencl.log"
+  Get-Content "opencl.log"
   Write-Output "Setting EXIT"
   $host.SetShouldExit(-1)
   Exit -1
