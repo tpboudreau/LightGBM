@@ -11,8 +11,8 @@ foreach ($p in $parts) {
 Write-Output "Combining parts"
 Start-Process "$installer.EXE" -Wait
 Start-Sleep -Seconds 10
-New-Item $cache -ItemType Directory
-Move-Item -Path "$installer" -Destination "$cache\$installer"
+New-Item $cache -ItemType Directory | Out-Null
+Move-Item -Path "$installer" -Destination "$cache\$installer" | Out-Null
 
 if (Test-Path "$cache\$installer") {
   Write-Output "Successfully downloaded OpenCL ..."
