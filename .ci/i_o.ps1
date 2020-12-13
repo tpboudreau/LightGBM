@@ -7,8 +7,6 @@ Get-WmiObject -Class Win32_BIOS
 Write-Output "Installing OpenCL runtime"
 $cache = "$env:PIPELINE_WORKSPACE\opencl_windows-amd_cpu-v3_0_130_135"
 $installer = "AMD-APP-SDKInstaller-v3.0.130.135-GA-windows-F-x64.exe"
-echo $cache
-echo $installer
 Invoke-Command -ScriptBlock {Start-Process "$cache\$installer" -ArgumentList '/S /V"/quiet /norestart /passive /log opencl.log"' -Wait}
 
 $property = Get-ItemProperty -Path Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Khronos\OpenCL\Vendors
