@@ -18,8 +18,6 @@ RefreshEnv
 Write-Output "Current OpenCL drivers:"
 Get-ItemProperty -Path Registry::HKEY_LOCAL_MACHINE\SOFTWARE\Khronos\OpenCL\Vendors
 
-Exit 0
-
 Write-Output "Setting up conda environment"
 conda init powershell
 conda activate
