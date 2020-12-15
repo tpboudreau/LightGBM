@@ -1,9 +1,4 @@
 
-Write-Output "Agent platform information:"
-Get-WmiObject -Class Win32_ComputerSystem
-Get-WmiObject -Class Win32_Processor
-Get-WmiObject -Class Win32_BIOS
-
 $cache = "$env:PIPELINE_WORKSPACE\opencl_windows-amd_cpu-v3_0_130_135"
 $installer = "AMD-APP-SDKInstaller-v3.0.130.135-GA-windows-F-x64.exe"
 
