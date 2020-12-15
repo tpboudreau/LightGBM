@@ -3,14 +3,11 @@ $cache = "$env:PIPELINE_WORKSPACE\opencl_windows-amd_cpu-v3_0_130_135"
 $installer = "AMD-APP-SDKInstaller-v3.0.130.135-GA-windows-F-x64.exe"
 
 if ($env:OPENCL_INSTALLER_FOUND -ne 'true') {
-
   Write-Output "Downloading ..."
   Invoke-WebRequest -OutFile "$installer" -Uri "https://github.com/microsoft/LightGBM/releases/download/v2.0.12/$installer"
-
   Write-Output "Caching ... "
   New-Item $cache -ItemType Directory | Out-Null
   Move-Item -Path "$installer" -Destination "$cache\$installer" | Out-Null
-
   if (Test-Path "$cache\$installer") {
     Write-Output "Successfully downloaded ..."
   } else {
